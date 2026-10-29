@@ -100,12 +100,28 @@ CREATE TABLE IF NOT EXISTS campaign_orders (
   package_label TEXT NOT NULL,
   target_url TEXT NOT NULL,
   coins_cost BIGINT NOT NULL CHECK (coins_cost > 0),
+  response_count SMALLINT NOT NULL DEFAULT 1 CHECK (response_count > 0),
+  reward_coins_per_response INTEGER NOT NULL DEFAULT 0 CHECK (reward_coins_per_response >= 0),
   status TEXT NOT NULL DEFAULT 'queued_for_review' CHECK (status IN ('queued_for_review','in_progress','completed','cancelled','refunded')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS campaign_orders_user_created_idx ON campaign_orders (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS campaign_orders_status_created_idx ON campaign_orders (status, created_at DESC);
+CREATE TABLE IF NOT EXISTS campaign_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_order_id UUID NOT NULL REFERENCES campaign_orders(id) ON DELETE CASCADE,
+  participant_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  response_text TEXT NOT NULL CHECK (char_length(response_text) BETWEEN 20 AND 3000),
+  reward_coins INTEGER NOT NULL CHECK (reward_coins > 0),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  review_note TEXT,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ,
+  UNIQUE (campaign_order_id, participant_user_id)
+);
+CREATE INDEX IF NOT EXISTS campaign_responses_status_created_idx ON campaign_responses (status, submitted_at DESC);
+CREATE INDEX IF NOT EXISTS campaign_responses_participant_idx ON campaign_responses (participant_user_id, submitted_at DESC);
 
 INSERT INTO tasks (id, title, description, instructions, reward_coins, task_type) VALUES
 ('video-feedback','Public video feedback','Help a creator improve their public video with useful, specific feedback.','Review the public video, then write constructive notes about its opening, clarity, pacing, or accessibility. Do not follow, like, comment for metric manipulation, or promise engagement.',25,'content_feedback'),
