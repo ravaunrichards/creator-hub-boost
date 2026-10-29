@@ -567,6 +567,96 @@ app.patch('/api/admin/task-submissions/:id', requireAdmin, async (req, res) => {
   } finally { client.release(); }
 });
 
+app.get('/api/admin/campaign-responses', requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const status = String(req.query.status || 'pending');
+  if (!['pending','approved','rejected','all'].includes(status)) return res.status(400).json({ error: 'Invalid response status filter.' });
+  try {
+    const result = await pool.query(
+      `SELECT r.id,r.campaign_order_id,r.participant_user_id,r.response_text,r.reward_coins,
+              r.status,r.review_note,r.submitted_at,o.user_id AS creator_user_id,
+              o.campaign_name,o.package_label,o.target_url,o.status AS campaign_status,
+              creator.display_name AS creator_name,participant.display_name AS participant_name
+       FROM campaign_responses r
+       JOIN campaign_orders o ON o.id=r.campaign_order_id
+       JOIN users creator ON creator.id=o.user_id
+       JOIN users participant ON participant.id=r.participant_user_id
+       WHERE ($1='all' OR r.status=$1)
+       ORDER BY r.submitted_at ASC LIMIT 300`,
+      [status]
+    );
+    res.json({ responses: result.rows });
+  } catch (error) {
+    console.error('Admin campaign response queue failed:', error.message);
+    res.status(500).json({ error: 'Unable to load campaign feedback responses.' });
+  }
+});
+
+app.patch('/api/admin/campaign-responses/:id', requireAdmin, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const parsed = z.object({ status: z.enum(['approved','rejected']), reviewNote: z.string().trim().max(500).optional().default('') }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Choose approved or rejected and provide a review note under 500 characters.' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `SELECT r.id,r.participant_user_id,r.status,r.reward_coins,r.campaign_order_id,
+              o.status AS campaign_status,o.response_count,o.campaign_name
+       FROM campaign_responses r JOIN campaign_orders o ON o.id=r.campaign_order_id
+       WHERE r.id=$1 FOR UPDATE OF r,o`,
+      [req.params.id]
+    );
+    const response = result.rows[0];
+    if (!response) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Campaign feedback response not found.' });
+    }
+    if (response.status !== 'pending') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This feedback response has already been reviewed.' });
+    }
+    if (!['queued_for_review','in_progress'].includes(response.campaign_status)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'The campaign is no longer accepting reviewed responses.' });
+    }
+    if (parsed.data.status === 'approved') {
+      await client.query(
+        `INSERT INTO wallets (user_id,balance) VALUES ($1,$2)
+         ON CONFLICT (user_id) DO UPDATE SET balance=wallets.balance+EXCLUDED.balance,updated_at=NOW()`,
+        [response.participant_user_id, response.reward_coins]
+      );
+      await client.query(
+        `INSERT INTO wallet_transactions (user_id,direction,amount,transaction_type,reference_id,idempotency_key,description)
+         VALUES ($1,'credit',$2,'task_reward',$3,$4,$5)`,
+        [response.participant_user_id,response.reward_coins,response.id,`campaign-response-reward:${response.id}`,`Approved genuine feedback: ${response.campaign_name}`]
+      );
+    }
+    const updated = await client.query(
+      'UPDATE campaign_responses SET status=$2,review_note=$3,reviewed_at=NOW() WHERE id=$1 RETURNING id,status,reward_coins,review_note,reviewed_at',
+      [response.id,parsed.data.status,parsed.data.reviewNote || null]
+    );
+    let campaignCompleted = false;
+    if (parsed.data.status === 'approved') {
+      const counts = await client.query(
+        "SELECT COUNT(*) FILTER (WHERE status='approved')::int AS approved FROM campaign_responses WHERE campaign_order_id=$1",
+        [response.campaign_order_id]
+      );
+      campaignCompleted = counts.rows[0].approved >= response.response_count;
+      if (campaignCompleted) {
+        await client.query("UPDATE campaign_orders SET status='completed',updated_at=NOW() WHERE id=$1", [response.campaign_order_id]);
+      } else {
+        await client.query("UPDATE campaign_orders SET status='in_progress',updated_at=NOW() WHERE id=$1 AND status='queued_for_review'", [response.campaign_order_id]);
+      }
+    }
+    await client.query('COMMIT');
+    res.json({ response: updated.rows[0], creditedCoins: parsed.data.status === 'approved' ? response.reward_coins : 0, campaignCompleted });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Campaign response review failed:', error.message);
+    res.status(500).json({ error: 'Could not review the feedback response.' });
+  } finally { client.release(); }
+});
+
 app.get('/api/admin/campaign-orders', requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
   const status = String(req.query.status || 'queued_for_review');
@@ -587,7 +677,7 @@ app.get('/api/admin/campaign-orders', requireAdmin, async (req, res) => {
 
 app.patch('/api/admin/campaign-orders/:id', requireAdmin, async (req, res) => {
   if (!requireDatabase(res)) return;
-  const parsed = z.object({ status: z.enum(['in_progress','completed','cancelled','refunded']) }).safeParse(req.body);
+  const parsed = z.object({ status: z.enum(['in_progress','cancelled','refunded']) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid campaign order status.' });
   const client = await pool.connect();
   try {
@@ -604,6 +694,11 @@ app.patch('/api/admin/campaign-orders/:id', requireAdmin, async (req, res) => {
     }
     const nextStatus = parsed.data.status;
     if (nextStatus === 'cancelled' || nextStatus === 'refunded') {
+      const delivered = await client.query("SELECT COUNT(*)::int AS count FROM campaign_responses WHERE campaign_order_id=$1 AND status='approved'", [order.id]);
+      if (delivered.rows[0].count > 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'This campaign already has approved human feedback. It cannot be fully refunded after rewards have been credited.' });
+      }
       await client.query(
         `INSERT INTO wallets (user_id,balance) VALUES ($1,$2)
          ON CONFLICT (user_id) DO UPDATE SET balance=wallets.balance+EXCLUDED.balance,updated_at=NOW()`,
