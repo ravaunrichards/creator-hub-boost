@@ -57,9 +57,10 @@ function renderCampaignOrders(items) {
   if (!items.length) { $('#campaignQueue').innerHTML = '<div class="admin-empty">No campaign orders have been submitted.</div>'; return; }
   $('#campaignQueue').innerHTML = items.map(order => {
     const terminal = ['completed','cancelled','refunded'].includes(order.status);
+    const canRefund = Number(order.approved_responses || 0) === 0;
     return `<article class="admin-record campaign-record">
       <div class="admin-record-top"><div><span class="admin-record-type">${escapeHtml(order.campaign_name)}</span><h3>${escapeHtml(order.package_label)} · ${Number(order.coins_cost).toLocaleString()} coins</h3><p>${Number(order.approved_responses || 0).toLocaleString()} of ${Number(order.response_count || 0).toLocaleString()} feedback responses approved · ${Number(order.reward_coins_per_response || 0).toLocaleString()} coins per approved response</p><p>${escapeHtml(order.email)} · ${escapeHtml(new Date(order.created_at).toLocaleString())}</p><p class="admin-url">${escapeHtml(order.target_url)}</p></div><span class="status-pill status-${escapeHtml(order.status)}">${escapeHtml(order.status.replaceAll('_',' '))}</span></div>
-      ${terminal ? '' : `<div class="admin-record-actions">${order.status === 'queued_for_review' ? `<button class="button primary" data-campaign-status="${escapeHtml(order.id)}" data-status="in_progress">Start review</button>` : ''}<button class="button danger-button" data-campaign-status="${escapeHtml(order.id)}" data-status="cancelled">Cancel & refund coins</button></div>`}
+      ${terminal ? '' : `<div class="admin-record-actions">${order.status === 'queued_for_review' ? `<button class="button primary" data-campaign-status="${escapeHtml(order.id)}" data-status="in_progress">Start review</button>` : ''}${canRefund ? `<button class="button danger-button" data-campaign-status="${escapeHtml(order.id)}" data-status="cancelled">Cancel & refund coins</button>` : '<small>Refund is locked because approved feedback rewards have already been paid.</small>'}</div>`}
     </article>`;
   }).join('');
 }
