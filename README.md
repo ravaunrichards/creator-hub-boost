@@ -1,63 +1,132 @@
 # Creator Hub Boost
 
-An original, responsive creator campaign storefront inspired by the *workflow* of TikSpark (service catalogue, package choice, order submission, PayPal checkout and order tracking). It does not use TikSpark's name, logo, text or source code. This is a **starter release**, not a claim that a live campaign fulfilment provider is connected.
+Creator Hub Boost is an independent creator rewards and promotion platform. Its core loop is:
 
-## What's included
+1. Members complete creator-support tasks and submit useful feedback for review.
+2. An administrator approves eligible work; the server credits the member's virtual coin wallet.
+3. Members can buy additional fixed coin packages through PayPal.
+4. Members spend virtual coins on Creator Hub Boost campaign requests.
+5. Members can view wallet transactions and campaign-order statuses.
 
-- Responsive storefront for Android/mobile and desktop.
-- Filterable service catalogue and server-authoritative package prices.
-- Order submission with TikTok URL validation, email validation and consent checkbox.
-- PostgreSQL order persistence and private, time-limited tracking tokens.
-- PayPal REST API sandbox/live mode selection, order creation and server-side capture validation.
-- Administrator login and protected order listing/status update endpoints.
-- Helmet security headers, rate limiting, input schemas, environment-based secrets, and automated domain tests.
+This implementation is an early functional release. It does not claim to be TikSpark, use TikSpark source code or branding, or connect an external campaign-fulfilment provider.
+
+## Current feature set
+
+- **Account access:** email/password registration and sign-in, bcrypt password hashes, signed user tokens, and server-side account lookups.
+- **Task rewards:** task catalogue, public TikTok URL validation, feedback submissions, one submission per task at a time, manual review, rejection notes, and rewards credited only after approval.
+- **Virtual wallet:** integer coin balances, an auditable credit/debit ledger, idempotency keys, and transaction history.
+- **PayPal top-ups:** fixed server-priced coin packages, REST checkout-order creation, authenticated capture requests, exact currency/amount/reference validation, and transactional one-time coin credit.
+- **Campaign marketplace:** discovery spotlight, human-audience feedback, and creative review packages; campaign orders debit the wallet inside a database transaction.
+- **Admin console:** open /admin.html; administrators can review task submissions and move campaign orders through the manual workflow. Cancelling a campaign refunds its coin cost to the member wallet.
+- **Baseline protections:** Helmet headers, API rate limiting, Zod request validation, environment-based secrets, HTTPS-only TikTok link validation, parameterized database queries, and automated domain tests.
+- **Responsive web interface:** task cards, wallet summary, PayPal coin packages, campaign marketplace, and order history for desktop and mobile.
 
 ## Requirements
 
 - Node.js 20 or newer
 - PostgreSQL 14 or newer
-- PayPal REST app credentials (sandbox for testing)
+- PayPal Developer REST app credentials for coin checkout (start with sandbox credentials)
 
-## Local setup
+## Local installation
 
-1. Copy `.env.example` to `.env` and fill in values. Set a strong random `JWT_SECRET`; never commit `.env`.
-2. Create a PostgreSQL database, then apply the schema:
-   `psql "$DATABASE_URL" -f db/schema.sql`
-3. Install dependencies: `npm install`
-4. Start the app: `npm start`
-5. Open `http://localhost:3000`.
-6. Use PayPal sandbox credentials and sandbox buyer account first. Set `PAYPAL_ENV=live` only after your merchant account, policies and checkout are ready.
+1. Copy the sample environment file:
 
-To configure the administrator, generate a bcrypt hash using:
-`node -e "import('bcryptjs').then(async b=>console.log(await b.hash(process.argv[1], 12)))" 'replace-this-password'`
-Put that hash in `ADMIN_PASSWORD_HASH` and the matching email in `ADMIN_EMAIL`. Never use a sample password in production.
+       cp .env.example .env
 
-## Test and checks
+2. Edit .env. Set a unique JWT_SECRET, DATABASE_URL, and PUBLIC_APP_URL. Keep PAYPAL_ENV=sandbox until testing is complete.
+3. Create a PostgreSQL database, then apply the fresh-install schema:
 
-- `npm test` runs built-in Node tests for package integrity, server-side price selection, input validation and PayPal environment selection.
-- `npm run check` checks JavaScript syntax.
-- The test suite does not test a real database, PayPal merchant account, email delivery or campaign fulfilment. Those require environment credentials and integration testing.
+       psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
 
-## Important implementation notes
+   The schema creates the tables and seeds the starter task catalogue.
 
-- **Fulfilment is not connected.** An order that is paid is queued for review. Connect only a lawful, transparent provider or fulfilment workflow that complies with TikTok's terms. This starter deliberately does not promise specific engagement results or implement fake/bot engagement.
-- **Email delivery is not connected.** The tracking token is returned to the browser and stored in session storage for this initial release. Add a transactional email provider before public launch so users receive their private tracking link reliably.
-- **Admin UI is API-only in this starter.** `/api/admin/login`, `/api/admin/orders` and `/api/admin/orders/:id/status` are provided; a full admin dashboard remains a follow-on task.
-- Configure HTTPS, database backups, monitoring, privacy/terms/refund pages, age/jurisdiction requirements, webhook verification, and production secrets before launch.
-- Use a production-grade secret manager and do not run with the fallback development JWT secret.
+4. Install dependencies and start the application:
+
+       npm install
+       npm run check
+       npm test
+       npm start
+
+5. Open http://localhost:3000.
+
+### Updating an existing database
+
+If the previous Creator Hub Boost schema is already installed, apply the incremental migration rather than recreating tables:
+
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_rewards_wallet.sql
+
+The migration is idempotent and seeds or updates the initial task catalogue.
+
+### Docker Compose
+
+After creating .env, run:
+
+    docker compose up --build
+
+The Compose file starts PostgreSQL and the application, waits for the database health check, and applies db/schema.sql on the first database-volume initialization. If the database volume already exists, apply the migration manually. Change POSTGRES_PASSWORD from the local default before using Compose anywhere beyond local development.
+
+## Configure administrator access
+
+Generate a bcrypt password hash:
+
+    node -e "import('bcryptjs').then(async b => console.log(await b.hash(process.argv[1], 12)))" 'use-a-new-strong-password'
+
+Set the resulting hash in ADMIN_PASSWORD_HASH and the matching email in ADMIN_EMAIL inside the server environment. Do not commit real secrets or use a sample password. Sign in through /admin.html.
+
+## Configure PayPal coin purchases
+
+1. Create or select a PayPal Developer REST app and obtain its client ID and secret.
+2. Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the server environment.
+3. Set PAYPAL_ENV=sandbox and use sandbox buyer credentials for testing.
+4. Set PUBLIC_APP_URL to the exact external application origin used for the checkout return URL.
+5. Verify that a successful sandbox purchase credits the expected coin package exactly once before enabling live mode.
+
+The coin packages and prices are defined in server/domain.js; price and coin quantities are never accepted from the browser. PayPal capture confirms the exact purchase reference, currency, and amount before a database transaction marks the purchase paid and credits the wallet.
+
+## Important product and deployment limitations
+
+- **Coin balances are virtual credits.** They are not cash, are not withdrawable, and have no cash value in this implementation.
+- **Task rewards require review.** The starter tasks request original feedback about public content or profiles; users cannot credit their own wallets by changing browser data.
+- **External campaign fulfilment is not connected.** Paid-in-coins campaign requests are recorded as queued_for_review; the admin workflow is manual. The UI does not claim that external engagement has been delivered.
+- **No email verification or password-reset delivery is configured.** Add a transactional email provider and account-recovery workflow before public launch.
+- **PayPal webhooks and payment-refund processing are not configured.** The starter confirms coin purchases when the member returns from checkout. Configure verified webhooks, dispute handling, and a monitored reconciliation workflow before production use.
+- **No automated follower/like exchange is implemented.** Do not add paid follow-for-follow, fake likes, bots, or artificial engagement guarantees. Review TikTok's current terms and platform policies before connecting any external fulfilment service.
+- Before real users or payments, complete database backups, HTTPS, production secret management, security review, accessibility/device testing, privacy/terms/refund pages, retention rules, support procedures, and applicable legal/age/jurisdiction review.
+
+Production requires a real JWT_SECRET with at least 32 characters. The server refuses to start in production if the secret is missing, too short, or still uses the sample placeholder.
 
 ## API outline
 
-- `GET /api/health`
-- `GET /api/services`
-- `POST /api/orders`
-- `POST /api/paypal/create-order`
-- `POST /api/paypal/capture-order`
-- `GET /api/orders/:id/status?token=...`
-- `POST /api/admin/login`
-- `GET /api/admin/orders` (Bearer admin JWT)
-- `PATCH /api/admin/orders/:id/status` (Bearer admin JWT)
+### Public
+- GET /api/health
+- GET /api/catalogue
+- GET /api/coin-packages
+- GET /api/campaigns
 
-## Source reference
+### Account and wallet (Bearer user token)
+- POST /api/auth/register
+- POST /api/auth/login
+- GET /api/me
+- GET /api/wallet/transactions
 
-Design and feature planning reference supplied by the user: https://tikspark.xyz/en. Creator Hub Boost is an independent brand and implementation.
+### Tasks and campaigns (Bearer user token)
+- GET /api/tasks
+- POST /api/tasks/:taskId/submissions
+- POST /api/coins/create-order
+- POST /api/coins/capture-order
+- POST /api/campaign-orders
+- GET /api/campaign-orders
+
+### Admin (Bearer administrator token)
+- POST /api/admin/login
+- GET /api/admin/task-submissions?status=pending
+- PATCH /api/admin/task-submissions/:id
+- GET /api/admin/campaign-orders?status=all
+- PATCH /api/admin/campaign-orders/:id
+
+## Validation
+
+- npm test runs the Node.js test suite for catalogue integrity, server-side package validation, task/campaign validation, TikTok URL validation, and PayPal environment selection.
+- npm run check checks JavaScript syntax for the backend, domain module, user UI, and admin UI.
+- GitHub Actions runs the tests and syntax checks on pushes and pull requests.
+- These checks do not replace tests against a live PostgreSQL instance, real PayPal sandbox credentials, browser/device end-to-end testing, or a professional security review.
