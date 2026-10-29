@@ -599,14 +599,28 @@ app.patch('/api/admin/campaign-responses/:id', requireAdmin, async (req, res) =>
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const result = await client.query(
-      `SELECT r.id,r.participant_user_id,r.status,r.reward_coins,r.campaign_order_id,
-              o.status AS campaign_status,o.response_count,o.campaign_name
-       FROM campaign_responses r JOIN campaign_orders o ON o.id=r.campaign_order_id
-       WHERE r.id=$1 FOR UPDATE OF r,o`,
-      [req.params.id]
+    // Lock the campaign order before the response row, matching participant submission
+    // lock order and avoiding a response/order deadlock under concurrent review.
+    const lookup = await client.query('SELECT campaign_order_id FROM campaign_responses WHERE id=$1', [req.params.id]);
+    if (!lookup.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Campaign feedback response not found.' });
+    }
+    const campaignResult = await client.query(
+      'SELECT id,status AS campaign_status,response_count,campaign_name FROM campaign_orders WHERE id=$1 FOR UPDATE',
+      [lookup.rows[0].campaign_order_id]
     );
-    const response = result.rows[0];
+    if (!campaignResult.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Campaign order not found.' });
+    }
+    const responseResult = await client.query(
+      'SELECT id,participant_user_id,status,reward_coins,campaign_order_id FROM campaign_responses WHERE id=$1 AND campaign_order_id=$2 FOR UPDATE',
+      [req.params.id, campaignResult.rows[0].id]
+    );
+    const response = responseResult.rows[0]
+      ? { ...responseResult.rows[0], campaign_status: campaignResult.rows[0].campaign_status, response_count: campaignResult.rows[0].response_count, campaign_name: campaignResult.rows[0].campaign_name }
+      : null;
     if (!response) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Campaign feedback response not found.' });
