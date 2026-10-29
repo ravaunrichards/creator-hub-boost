@@ -10,6 +10,10 @@ import pg from 'pg';
 import { z } from 'zod';
 import { COIN_PACKAGES, CAMPAIGNS, SERVICES, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl } from './domain.js';
 
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env.JWT_SECRET.startsWith('replace-'))) {
+  throw new Error('Production startup requires a real JWT_SECRET with at least 32 characters.');
+}
+
 const app = express();
 const { Pool } = pg;
 const pool = process.env.DATABASE_URL
