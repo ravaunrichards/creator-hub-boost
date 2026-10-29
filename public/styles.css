@@ -129,3 +129,15 @@
 .admin-url{overflow-wrap:anywhere;max-width:700px}
 .admin-empty{padding:25px;background:white;border:1px dashed #d8d3ee;border-radius:13px;font-size:12px;line-height:1.7;color:var(--muted)}
 @media(max-width:700px){.admin-main{padding:35px 18px 65px}.admin-topbar{padding:0 18px}.admin-topbar .top-cta{display:inline-block;padding:9px 11px;font-size:10px}.admin-record{padding:15px}.admin-record-top{display:grid;gap:12px}.admin-toolbar{align-items:flex-start;flex-direction:column}.admin-toolbar .button{align-self:flex-start}.admin-record-actions .button{flex:1}.admin-record-actions .button{min-width:140px}}
+
+
+/* Genuine human feedback workflow */
+.feedback-section{background:#fff}
+.feedback-task-card{border-color:#ded8f7;box-shadow:0 12px 32px #5745b908}
+.feedback-task-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0;font-size:10px;color:#77758d}
+.feedback-task-meta span:first-child{font-weight:700;color:#6650cf}
+.feedback-open-link{font-size:10px;padding:12px;margin-bottom:14px}
+.feedback-task-card .small-note{margin-top:12px}
+.campaign-feedback-results{margin-top:10px}
+.campaign-feedback-results summary{font-size:10px;font-weight:700;color:#6d52d8;cursor:pointer;padding:7px 0}
+.campaign-feedback-results blockquote{border-left:3px solid #c6b9ff;background:#faf9ff;border-radius:0 7px 7px 0;margin:8px 0;padding:10px;font-size:10px;line-height:1.7;color:#66647b;white-space:pre-wrap;overflow-wrap:anywhere}
