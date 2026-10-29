@@ -22,11 +22,13 @@ async function loadAdminQueues() {
   $('#submissionQueue').innerHTML = '<p class="muted">Loading task submissions…</p>';
   $('#campaignQueue').innerHTML = '<p class="muted">Loading campaign orders…</p>';
   try {
-    const [taskData, campaignData] = await Promise.all([
+    const [taskData, responseData, campaignData] = await Promise.all([
       adminApi('/api/admin/task-submissions?status=pending'),
+      adminApi('/api/admin/campaign-responses?status=pending'),
       adminApi('/api/admin/campaign-orders?status=all')
     ]);
     renderSubmissions(taskData.submissions || []);
+    renderCampaignResponses(responseData.responses || []);
     renderCampaignOrders(campaignData.orders || []);
   } catch (error) {
     $('#adminMessage').textContent = error.message;
@@ -41,13 +43,23 @@ function renderSubmissions(items) {
     <div class="admin-record-actions"><button class="button primary" data-review-task="${escapeHtml(item.id)}" data-review-status="approved">Approve & credit coins</button><button class="button danger-button" data-review-task="${escapeHtml(item.id)}" data-review-status="rejected">Reject submission</button></div>
   </article>`).join('');
 }
+function renderCampaignResponses(items) {
+  if (!items.length) { $('#campaignResponseQueue').innerHTML = '<div class="admin-empty">No genuine campaign feedback is waiting for review.</div>'; return; }
+  $('#campaignResponseQueue').innerHTML = items.map(item => `<article class="admin-record">
+    <div class="admin-record-top"><div><span class="admin-record-type">${escapeHtml(item.campaign_name)} · ${escapeHtml(item.package_label)}</span><h3>Reward: ${Number(item.reward_coins).toLocaleString()} coins</h3><p>${escapeHtml(item.participant_name)} submitted feedback for ${escapeHtml(item.creator_name)} · ${escapeHtml(new Date(item.submitted_at).toLocaleString())}</p></div><a class="admin-link" href="${escapeHtml(item.target_url)}" target="_blank" rel="noopener noreferrer">Open public TikTok ↗</a></div>
+    <blockquote>${escapeHtml(item.response_text)}</blockquote>
+    <label>Review note (optional)<textarea data-campaign-response-note="${escapeHtml(item.id)}" rows="2" maxlength="500" placeholder="Explain the decision or ask for a more specific review…"></textarea></label>
+    <div class="admin-record-actions"><button class="button primary" data-review-campaign-response="${escapeHtml(item.id)}" data-review-status="approved">Approve & credit coins</button><button class="button danger-button" data-review-campaign-response="${escapeHtml(item.id)}" data-review-status="rejected">Reject response</button></div>
+  </article>`).join('');
+}
+
 function renderCampaignOrders(items) {
   if (!items.length) { $('#campaignQueue').innerHTML = '<div class="admin-empty">No campaign orders have been submitted.</div>'; return; }
   $('#campaignQueue').innerHTML = items.map(order => {
     const terminal = ['completed','cancelled','refunded'].includes(order.status);
     return `<article class="admin-record campaign-record">
       <div class="admin-record-top"><div><span class="admin-record-type">${escapeHtml(order.campaign_name)}</span><h3>${escapeHtml(order.package_label)} · ${Number(order.coins_cost).toLocaleString()} coins</h3><p>${escapeHtml(order.email)} · ${escapeHtml(new Date(order.created_at).toLocaleString())}</p><p class="admin-url">${escapeHtml(order.target_url)}</p></div><span class="status-pill status-${escapeHtml(order.status)}">${escapeHtml(order.status.replaceAll('_',' '))}</span></div>
-      ${terminal ? '' : `<div class="admin-record-actions">${order.status === 'queued_for_review' ? `<button class="button primary" data-campaign-status="${escapeHtml(order.id)}" data-status="in_progress">Start review</button>` : ''}<button class="button outline-button" data-campaign-status="${escapeHtml(order.id)}" data-status="completed">Mark completed</button><button class="button danger-button" data-campaign-status="${escapeHtml(order.id)}" data-status="cancelled">Cancel & refund coins</button></div>`}
+      ${terminal ? '' : `<div class="admin-record-actions">${order.status === 'queued_for_review' ? `<button class="button primary" data-campaign-status="${escapeHtml(order.id)}" data-status="in_progress">Start review</button>` : ''}<button class="button danger-button" data-campaign-status="${escapeHtml(order.id)}" data-status="cancelled">Cancel & refund coins</button></div>`}
     </article>`;
   }).join('');
 }
@@ -89,6 +101,27 @@ $('#submissionQueue').addEventListener('click', async (event) => {
       method: 'PATCH', body: JSON.stringify({ status, reviewNote: note })
     });
     $('#adminMessage').textContent = status === 'approved' ? `Approved. ${Number(data.creditedCoins).toLocaleString()} coins credited.` : 'Submission rejected.';
+    await loadAdminQueues();
+  } catch (error) {
+    $('#adminMessage').textContent = error.message;
+    button.disabled = false;
+  }
+});
+$('#campaignResponseQueue').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-review-campaign-response]');
+  if (!button) return;
+  const id = button.dataset.reviewCampaignResponse;
+  const status = button.dataset.reviewStatus;
+  const note = document.querySelector(`[data-campaign-response-note="${CSS.escape(id)}"]`)?.value || '';
+  if (status === 'approved' && !window.confirm('Approve this genuine feedback and credit the participant coins?')) return;
+  button.disabled = true;
+  try {
+    const data = await adminApi(`/api/admin/campaign-responses/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ status, reviewNote: note })
+    });
+    $('#adminMessage').textContent = status === 'approved'
+      ? `Feedback approved. ${Number(data.creditedCoins).toLocaleString()} coins credited to the participant.${data.campaignCompleted ? ' Campaign response target completed.' : ''}`
+      : 'Feedback response rejected; the slot is available for another participant.';
     await loadAdminQueues();
   } catch (error) {
     $('#adminMessage').textContent = error.message;
