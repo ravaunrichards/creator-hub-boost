@@ -1,23 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  SERVICES, COIN_PACKAGES, TASK_SEEDS, CAMPAIGNS,
-  validateOrder, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl
+  COIN_PACKAGES, TASK_SEEDS, CAMPAIGNS,
+  validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl
 } from '../server/domain.js';
 
 const validTikTokUrl = 'https://www.tiktok.com/@sample/video/123456789';
-const goodLegacyOrder = { serviceId: 'video-views', packageId: 'views-1k', targetUrl: validTikTokUrl, email: 'customer@example.com', policyAccepted: true };
 const goodTask = { taskId: 'video-feedback', targetUrl: validTikTokUrl, responseText: 'The opening is clear, but adding captions would help viewers follow the main point.' };
 
 test('service, task, coin-package and campaign identifiers are unique and valid', () => {
-  assert.equal(new Set(SERVICES.map(service => service.id)).size, SERVICES.length);
   assert.equal(new Set(COIN_PACKAGES.map(pack => pack.id)).size, COIN_PACKAGES.length);
   assert.equal(new Set(TASK_SEEDS.map(task => task.id)).size, TASK_SEEDS.length);
   assert.equal(new Set(CAMPAIGNS.map(campaign => campaign.id)).size, CAMPAIGNS.length);
-  for (const service of SERVICES) {
-    assert.equal(new Set(service.packages.map(pack => pack.id)).size, service.packages.length);
-    for (const pack of service.packages) assert.ok(pack.price > 0);
-  }
   for (const pack of COIN_PACKAGES) {
     assert.ok(Number.isSafeInteger(pack.coins) && pack.coins > 0);
     assert.ok(Number.isFinite(pack.price) && pack.price > 0);
@@ -26,14 +20,6 @@ test('service, task, coin-package and campaign identifiers are unique and valid'
   const campaignPackageIds = CAMPAIGNS.flatMap(campaign => campaign.packages.map(pack => pack.id));
   assert.equal(new Set(campaignPackageIds).size, campaignPackageIds.length);
   for (const campaign of CAMPAIGNS) for (const pack of campaign.packages) { assert.ok(Number.isSafeInteger(pack.coins) && pack.coins > 0); assert.ok(Number.isSafeInteger(pack.responseCount) && pack.responseCount > 0); assert.ok(Number.isSafeInteger(pack.rewardCoinsPerResponse) && pack.rewardCoinsPerResponse > 0); }
-});
-
-test('legacy order pricing comes from the server catalogue and normalizes email', () => {
-  const order = validateOrder({ ...goodLegacyOrder, email: ' CUSTOMER@Example.com ' });
-  assert.equal(order.amount, 2.99);
-  assert.equal(order.email, 'customer@example.com');
-  assert.equal(order.currency, 'USD');
-  assert.equal(order.status, 'awaiting_payment');
 });
 
 test('task submissions require a valid active task, TikTok URL and useful feedback', () => {
@@ -60,12 +46,6 @@ test('TikTok URL validation rejects non-HTTPS links and host spoofing', () => {
   assert.throws(() => validateTikTokUrl('https://tiktok.com.attacker.example/@sample'), /HTTPS/);
   assert.throws(() => validateTikTokUrl('https://example.com/@sample'), /HTTPS/);
   assert.throws(() => validateTikTokUrl('javascript:alert(1)'), /HTTPS/);
-});
-
-test('legacy order rejects unknown packages, invalid email and missing authorization', () => {
-  assert.throws(() => validateOrder({ ...goodLegacyOrder, packageId: 'made-up' }), /valid package/);
-  assert.throws(() => validateOrder({ ...goodLegacyOrder, email: 'bad-email' }), /valid email/);
-  assert.throws(() => validateOrder({ ...goodLegacyOrder, policyAccepted: false }), /authorized/);
 });
 
 test('PayPal uses sandbox by default and live only when explicitly selected', () => {
