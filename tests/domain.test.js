@@ -25,7 +25,7 @@ test('service, task, coin-package and campaign identifiers are unique and valid'
   }
   const campaignPackageIds = CAMPAIGNS.flatMap(campaign => campaign.packages.map(pack => pack.id));
   assert.equal(new Set(campaignPackageIds).size, campaignPackageIds.length);
-  for (const campaign of CAMPAIGNS) for (const pack of campaign.packages) assert.ok(Number.isSafeInteger(pack.coins) && pack.coins > 0);
+  for (const campaign of CAMPAIGNS) for (const pack of campaign.packages) { assert.ok(Number.isSafeInteger(pack.coins) && pack.coins > 0); assert.ok(Number.isSafeInteger(pack.responseCount) && pack.responseCount > 0); assert.ok(Number.isSafeInteger(pack.rewardCoinsPerResponse) && pack.rewardCoinsPerResponse > 0); }
 });
 
 test('legacy order pricing comes from the server catalogue and normalizes email', () => {
@@ -46,11 +46,13 @@ test('task submissions require a valid active task, TikTok URL and useful feedba
 });
 
 test('campaign package choice and authorization are validated on the server', () => {
-  const campaignOrder = validateCampaignOrder({ campaignId: 'creator-spotlight', packageId: 'spotlight-3day', targetUrl: validTikTokUrl, policyAccepted: true });
-  assert.equal(campaignOrder.coinsCost, 350);
-  assert.equal(campaignOrder.packageLabel, '3-day spotlight');
-  assert.throws(() => validateCampaignOrder({ campaignId: 'creator-spotlight', packageId: 'invented', targetUrl: validTikTokUrl, policyAccepted: true }), /valid campaign package/);
-  assert.throws(() => validateCampaignOrder({ campaignId: 'creator-spotlight', packageId: 'spotlight-3day', targetUrl: validTikTokUrl, policyAccepted: false }), /authorized/);
+  const campaignOrder = validateCampaignOrder({ campaignId: 'video-feedback-panel', packageId: 'feedback-15', targetUrl: validTikTokUrl, policyAccepted: true });
+  assert.equal(campaignOrder.coinsCost, 600);
+  assert.equal(campaignOrder.packageLabel, '15 feedback responses');
+  assert.equal(campaignOrder.responseCount, 15);
+  assert.equal(campaignOrder.rewardCoinsPerResponse, 30);
+  assert.throws(() => validateCampaignOrder({ campaignId: 'video-feedback-panel', packageId: 'invented', targetUrl: validTikTokUrl, policyAccepted: true }), /valid campaign package/);
+  assert.throws(() => validateCampaignOrder({ campaignId: 'video-feedback-panel', packageId: 'feedback-15', targetUrl: validTikTokUrl, policyAccepted: false }), /authorized/);
 });
 
 test('TikTok URL validation rejects non-HTTPS links and host spoofing', () => {
