@@ -1,5 +1,5 @@
 const $ = (selector) => document.querySelector(selector);
-const state = { token: sessionStorage.getItem('chb-access-token') || '', user: null, balance: 0, tasks: [], coinPackages: [], campaigns: [], activeCampaign: null };
+const state = { token: sessionStorage.getItem('chb-access-token') || '', user: null, balance: 0, tasks: [], feedbackTasks: [], coinPackages: [], campaigns: [], activeCampaign: null };
 const money = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
 const number = (value) => new Intl.NumberFormat('en-US').format(Number(value || 0));
 function escapeHtml(value) {
@@ -76,7 +76,7 @@ async function loadAccount() {
     state.user = data.user;
     state.balance = Number(data.wallet?.balance || 0);
     updateSignedInUI();
-    await Promise.all([loadTasks(), loadTransactions(), loadCampaignOrders()]);
+    await Promise.all([loadTasks(), loadAvailableFeedbackTasks(), loadTransactions(), loadCampaignOrders()]);
   } catch (error) {
     signOut(false);
     $('#authMessage').textContent = error.message;
@@ -104,6 +104,20 @@ async function loadTasks() {
     $('#taskGrid').innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
   }
 }
+async function loadAvailableFeedbackTasks() {
+  const grid = $('#feedbackTaskGrid');
+  if (!state.user) {
+    grid.innerHTML = '<div class="empty-state"><span>🤝</span><h3>Find real human feedback tasks</h3><p>Sign in to review public content and submit feedback for coin rewards.</p></div>';
+    return;
+  }
+  try {
+    const data = await api('/api/available-feedback');
+    state.feedbackTasks = data.tasks || [];
+    renderFeedbackTasks();
+  } catch (error) {
+    grid.innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
+  }
+}
 async function loadTransactions() {
   if (!state.user) return;
   try {
@@ -120,7 +134,7 @@ async function loadCampaignOrders() {
   try {
     const data = await api('/api/campaign-orders');
     const orders = data.orders || [];
-    $('#orderList').innerHTML = orders.length ? orders.map(order => `<article class="order-row"><div><b>${escapeHtml(order.campaignName)}</b><span>${escapeHtml(order.packageLabel)} · ${number(order.coinsCost)} coins</span><small>${escapeHtml(new Date(order.createdAt).toLocaleDateString())}</small></div><span class="status-pill status-${escapeHtml(order.status)}">${escapeHtml(order.status.replaceAll('_', ' '))}</span></article>`).join('') : '<p class="muted">Your campaign orders will appear here.</p>';
+    $('#orderList').innerHTML = orders.length ? orders.map(order => `<article class="order-row"><div><b>${escapeHtml(order.campaignName)}</b><span>${escapeHtml(order.packageLabel)} · ${number(order.coinsCost)} coins</span><small>${number(order.approvedResponses || 0)} of ${number(order.responseCount || 0)} feedback responses approved · ${escapeHtml(new Date(order.createdAt).toLocaleDateString())}</small>${Array.isArray(order.feedback) && order.feedback.length ? `<details class="campaign-feedback-results"><summary>Read approved feedback (${order.feedback.length})</summary>${order.feedback.map(item => `<blockquote>${escapeHtml(item.feedback)}</blockquote>`).join('')}</details>` : ''}</div><span class="status-pill status-${escapeHtml(order.status)}">${escapeHtml(order.status.replaceAll('_', ' '))}</span></article>`).join('') : '<p class="muted">Your campaign orders will appear here.</p>';
   } catch (error) { $('#orderList').innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`; }
 }
 function renderTasks() {
@@ -143,6 +157,27 @@ function renderTasks() {
       </form>`}
     </article>`;
   }).join('');
+}
+function renderFeedbackTasks() {
+  const grid = $('#feedbackTaskGrid');
+  if (!state.user) return;
+  if (!state.feedbackTasks.length) {
+    grid.innerHTML = '<div class="empty-state"><span>✨</span><h3>No open feedback campaigns right now</h3><p>When a creator starts a campaign, their public content appears here. You earn coins for useful feedback after review—not for following or liking.</p></div>';
+    return;
+  }
+  grid.innerHTML = state.feedbackTasks.map(task => `<article class="task-card feedback-task-card">
+    <div class="task-top"><span class="task-icon">🤝</span><span class="coin-reward">+ ${number(task.rewardCoins)} 🪙</span></div>
+    <h3>${escapeHtml(task.campaignName)}</h3>
+    <p><b>${escapeHtml(task.creatorName)}</b> is looking for independent human feedback on this public video.</p>
+    <div class="feedback-task-meta"><span>${number(task.submittedResponses)} of ${number(task.responseCount)} responses submitted</span><span>Reward after approval</span></div>
+    <a class="button outline-button full-button feedback-open-link" href="${escapeHtml(task.targetUrl)}" target="_blank" rel="noopener noreferrer">Open public TikTok content ↗</a>
+    <form class="task-submit-form" data-feedback-form="${escapeHtml(task.id)}">
+      <label>Your original feedback<textarea name="responseText" required minlength="20" maxlength="3000" rows="4" placeholder="Write specific and constructive feedback about the content, clarity, pacing, or accessibility…"></textarea></label>
+      <button class="button primary full-button" type="submit">Submit feedback for review →</button>
+      <div class="form-message" aria-live="polite"></div>
+    </form>
+    <p class="small-note">No follow, like, share, or comment is required. Any interaction outside this app is your independent choice.</p>
+  </article>`).join('');
 }
 function renderCoinPackages() {
   if (!state.coinPackages.length) return;
@@ -211,7 +246,7 @@ $('#authForm').addEventListener('submit', async (event) => {
     sessionStorage.setItem('chb-access-token', state.token);
     $('#authPassword').value = '';
     updateSignedInUI();
-    await Promise.all([loadTasks(), loadTransactions(), loadCampaignOrders()]);
+    await Promise.all([loadTasks(), loadAvailableFeedbackTasks(), loadTransactions(), loadCampaignOrders()]);
     setNotice(signup ? 'Account created. Welcome!' : 'Signed in successfully.');
     await processPaymentReturn();
   } catch (error) {
@@ -251,6 +286,28 @@ $('#taskGrid').addEventListener('submit', async (event) => {
     message.textContent = error.message;
     button.disabled = false;
     button.textContent = 'Submit for review →';
+  }
+});
+$('#feedbackTaskGrid').addEventListener('submit', async (event) => {
+  const form = event.target.closest('[data-feedback-form]');
+  if (!form) return;
+  event.preventDefault();
+  if (!requireSignIn()) return;
+  const button = form.querySelector('button[type="submit"]');
+  const message = form.querySelector('.form-message');
+  button.disabled = true;
+  button.textContent = 'Submitting feedback…';
+  message.textContent = '';
+  try {
+    const data = await api(`/api/campaign-orders/${encodeURIComponent(form.dataset.feedbackForm)}/responses`, {
+      method: 'POST', body: JSON.stringify({ responseText: form.elements.responseText.value.trim() })
+    });
+    message.textContent = data.message;
+    await loadAvailableFeedbackTasks();
+  } catch (error) {
+    message.textContent = error.message;
+    button.disabled = false;
+    button.textContent = 'Submit feedback for review →';
   }
 });
 $('#coinGrid').addEventListener('click', (event) => {
