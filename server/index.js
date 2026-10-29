@@ -663,7 +663,10 @@ app.get('/api/admin/campaign-orders', requireAdmin, async (req, res) => {
   if (!['queued_for_review','in_progress','completed','cancelled','refunded','all'].includes(status)) return res.status(400).json({ error: 'Invalid campaign order status filter.' });
   try {
     const result = await pool.query(
-      `SELECT c.id,c.user_id,u.email,c.campaign_name,c.package_label,c.target_url,c.coins_cost,c.status,c.created_at,c.updated_at
+      `SELECT c.id,c.user_id,u.email,c.campaign_name,c.package_label,c.target_url,c.coins_cost,
+              c.response_count,c.reward_coins_per_response,c.status,c.created_at,c.updated_at,
+              (SELECT COUNT(*)::int FROM campaign_responses r WHERE r.campaign_order_id=c.id AND r.status IN ('pending','approved')) AS submitted_responses,
+              (SELECT COUNT(*)::int FROM campaign_responses r WHERE r.campaign_order_id=c.id AND r.status='approved') AS approved_responses
        FROM campaign_orders c JOIN users u ON u.id=c.user_id
        WHERE ($1='all' OR c.status=$1)
        ORDER BY c.created_at ASC LIMIT 300`,
