@@ -346,6 +346,89 @@ const campaignBodySchema = z.object({
   targetUrl: z.string().max(500),
   policyAccepted: z.boolean()
 });
+app.get('/api/available-feedback', requireUser, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  try {
+    const result = await pool.query(
+      `SELECT o.id,o.campaign_name,o.package_label,o.target_url,o.response_count,
+              o.reward_coins_per_response,o.created_at,u.display_name AS creator_name,
+              (SELECT COUNT(*)::int FROM campaign_responses r WHERE r.campaign_order_id=o.id AND r.status IN ('pending','approved')) AS submitted_responses
+       FROM campaign_orders o
+       JOIN users u ON u.id=o.user_id
+       WHERE o.user_id<>$1 AND o.status IN ('queued_for_review','in_progress')
+         AND (SELECT COUNT(*) FROM campaign_responses r WHERE r.campaign_order_id=o.id AND r.status IN ('pending','approved')) < o.response_count
+         AND NOT EXISTS (SELECT 1 FROM campaign_responses mine WHERE mine.campaign_order_id=o.id AND mine.participant_user_id=$1 AND mine.status IN ('pending','approved'))
+       ORDER BY o.created_at ASC LIMIT 100`,
+      [req.userId]
+    );
+    res.json({ tasks: result.rows.map(row => ({ id: row.id, campaignName: row.campaign_name, packageLabel: row.package_label, targetUrl: row.target_url, rewardCoins: asCoins(row.reward_coins_per_response), responseCount: row.response_count, submittedResponses: row.submitted_responses, creatorName: row.creator_name, createdAt: row.created_at })) });
+  } catch (error) {
+    console.error('Available feedback tasks failed:', error.message);
+    res.status(500).json({ error: 'Unable to load genuine-feedback tasks.' });
+  }
+});
+
+app.post('/api/campaign-orders/:id/responses', requireUser, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const parsed = z.object({ responseText: z.string().trim().min(20).max(3000) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Write feedback between 20 and 3,000 characters.' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const orderResult = await client.query(
+      `SELECT id,user_id,campaign_name,target_url,response_count,reward_coins_per_response,status
+       FROM campaign_orders WHERE id=$1 FOR UPDATE`,
+      [req.params.id]
+    );
+    const order = orderResult.rows[0];
+    if (!order || order.user_id === req.userId) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Feedback campaign not found.' });
+    }
+    if (!['queued_for_review','in_progress'].includes(order.status)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This feedback campaign is not accepting responses.' });
+    }
+    const priorResult = await client.query(
+      'SELECT id,status FROM campaign_responses WHERE campaign_order_id=$1 AND participant_user_id=$2 FOR UPDATE',
+      [order.id, req.userId]
+    );
+    const prior = priorResult.rows[0];
+    if (prior && prior.status !== 'rejected') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'You already submitted feedback for this campaign.' });
+    }
+    const countResult = await client.query(
+      "SELECT COUNT(*)::int AS count FROM campaign_responses WHERE campaign_order_id=$1 AND status IN ('pending','approved')",
+      [order.id]
+    );
+    if (countResult.rows[0].count >= order.response_count) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This campaign has received all requested feedback responses.' });
+    }
+    const responseResult = await client.query(
+      `INSERT INTO campaign_responses (campaign_order_id,participant_user_id,response_text,reward_coins,status)
+       VALUES ($1,$2,$3,$4,'pending')
+       ON CONFLICT (campaign_order_id,participant_user_id) DO UPDATE SET
+         response_text=EXCLUDED.response_text,reward_coins=EXCLUDED.reward_coins,status='pending',
+         review_note=NULL,submitted_at=NOW(),reviewed_at=NULL
+       WHERE campaign_responses.status='rejected'
+       RETURNING id,status,reward_coins,submitted_at`,
+      [order.id, req.userId, parsed.data.responseText, order.reward_coins_per_response]
+    );
+    if (!responseResult.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Your response could not be resubmitted.' });
+    }
+    await client.query('COMMIT');
+    res.status(201).json({ response: responseResult.rows[0], message: 'Feedback submitted for review. Coins are added after approval; a TikTok like, follow, comment, or share is never required.' });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Feedback submission failed:', error.message);
+    res.status(500).json({ error: 'Could not submit feedback.' });
+  } finally { client.release(); }
+});
+
 app.post('/api/campaign-orders', requireUser, async (req, res) => {
   if (!requireDatabase(res)) return;
   const parsed = campaignBodySchema.safeParse(req.body);
@@ -365,9 +448,9 @@ app.post('/api/campaign-orders', requireUser, async (req, res) => {
       return res.status(402).json({ error: `Not enough coins. This campaign costs ${order.coinsCost.toLocaleString()} coins; your balance is ${balance.toLocaleString()}.`, balance });
     }
     await client.query(
-      `INSERT INTO campaign_orders (id,user_id,campaign_id,campaign_name,package_id,package_label,target_url,coins_cost,status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'queued_for_review')`,
-      [orderId, req.userId, order.campaignId, order.campaignName, order.packageId, order.packageLabel, order.targetUrl, order.coinsCost]
+      `INSERT INTO campaign_orders (id,user_id,campaign_id,campaign_name,package_id,package_label,target_url,coins_cost,response_count,reward_coins_per_response,status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'queued_for_review')`,
+      [orderId, req.userId, order.campaignId, order.campaignName, order.packageId, order.packageLabel, order.targetUrl, order.coinsCost, order.responseCount, order.rewardCoinsPerResponse]
     );
     const updatedWallet = await client.query('UPDATE wallets SET balance=balance-$2,updated_at=NOW() WHERE user_id=$1 RETURNING balance', [req.userId, order.coinsCost]);
     await client.query(
@@ -376,7 +459,7 @@ app.post('/api/campaign-orders', requireUser, async (req, res) => {
       [req.userId, order.coinsCost, orderId, `campaign-spend:${orderId}`, `Campaign order: ${order.packageLabel}`]
     );
     await client.query('COMMIT');
-    res.status(201).json({ order: { id: orderId, campaignName: order.campaignName, packageLabel: order.packageLabel, coinsCost: order.coinsCost, status: 'queued_for_review' }, wallet: { balance: asCoins(updatedWallet.rows[0].balance) }, message: 'Campaign request submitted for review. No external engagement delivery is claimed by this starter.' });
+    res.status(201).json({ order: { id: orderId, campaignName: order.campaignName, packageLabel: order.packageLabel, coinsCost: order.coinsCost, responseCount: order.responseCount, rewardCoinsPerResponse: order.rewardCoinsPerResponse, status: 'queued_for_review' }, wallet: { balance: asCoins(updatedWallet.rows[0].balance) }, message: 'Your campaign is now available for genuine human feedback. Participants earn coins for reviewed feedback, never for a required follow, like, comment, or share.' });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     console.error('Campaign order failed:', error.message);
@@ -388,10 +471,16 @@ app.get('/api/campaign-orders', requireUser, async (req, res) => {
   if (!requireDatabase(res)) return;
   try {
     const result = await pool.query(
-      'SELECT id,campaign_name,package_label,target_url,coins_cost,status,created_at,updated_at FROM campaign_orders WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100',
+      `SELECT o.id,o.campaign_name,o.package_label,o.target_url,o.coins_cost,o.response_count,
+              o.reward_coins_per_response,o.status,o.created_at,o.updated_at,
+              (SELECT COUNT(*)::int FROM campaign_responses r WHERE r.campaign_order_id=o.id AND r.status IN ('pending','approved')) AS submitted_responses,
+              (SELECT COUNT(*)::int FROM campaign_responses r WHERE r.campaign_order_id=o.id AND r.status='approved') AS approved_responses,
+              COALESCE((SELECT json_agg(json_build_object('id',r.id,'feedback',r.response_text,'createdAt',r.reviewed_at) ORDER BY r.reviewed_at DESC)
+                        FROM campaign_responses r WHERE r.campaign_order_id=o.id AND r.status='approved'),'[]'::json) AS feedback
+       FROM campaign_orders o WHERE o.user_id=$1 ORDER BY o.created_at DESC LIMIT 100`,
       [req.userId]
     );
-    res.json({ orders: result.rows.map(row => ({ id: row.id, campaignName: row.campaign_name, packageLabel: row.package_label, targetUrl: row.target_url, coinsCost: asCoins(row.coins_cost), status: row.status, createdAt: row.created_at, updatedAt: row.updated_at })) });
+    res.json({ orders: result.rows.map(row => ({ id: row.id, campaignName: row.campaign_name, packageLabel: row.package_label, targetUrl: row.target_url, coinsCost: asCoins(row.coins_cost), responseCount: row.response_count, rewardCoinsPerResponse: row.reward_coins_per_response, submittedResponses: row.submitted_responses, approvedResponses: row.approved_responses, feedback: row.feedback, status: row.status, createdAt: row.created_at, updatedAt: row.updated_at })) });
   } catch {
     res.status(500).json({ error: 'Unable to load campaign orders.' });
   }
