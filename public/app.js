@@ -326,7 +326,7 @@ async function processPaymentReturn() {
     if (data.balance !== undefined) state.balance = Number(data.balance);
     $('#walletBalance').textContent = number(state.balance);
     setNotice(data.message || 'Payment status updated.');
-    await Promise.all([loadTransactions(), loadAccount()]);
+    await loadTransactions();
   } catch (error) {
     setNotice(error.message, true);
   }
