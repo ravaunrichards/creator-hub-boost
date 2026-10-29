@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import pg from 'pg';
 import { z } from 'zod';
-import { COIN_PACKAGES, CAMPAIGNS, SERVICES, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl } from './domain.js';
+import { COIN_PACKAGES, CAMPAIGNS, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl } from './domain.js';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env.JWT_SECRET.startsWith('replace-'))) {
   throw new Error('Production startup requires a real JWT_SECRET with at least 32 characters.');
@@ -99,7 +99,7 @@ app.get('/api/health', async (_req, res) => {
 app.get('/api/catalogue', (_req, res) => {
   res.json({ coinPackages: COIN_PACKAGES, campaigns: CAMPAIGNS, currency: 'USD' });
 });
-app.get('/api/services', (_req, res) => res.json({ services: SERVICES, currency: 'USD', note: 'The supported purchase flow uses the virtual coin wallet.' }));
+app.get('/api/services', (_req, res) => res.json({ services: CAMPAIGNS, currency: 'COINS', note: 'Campaign requests are paid with virtual coins and fulfilled through genuine, reviewed human feedback. TikTok follows, likes, comments, and shares are never promised or rewarded.' }));
 app.get('/api/coin-packages', (_req, res) => res.json({ packages: COIN_PACKAGES, currency: 'USD' }));
 app.get('/api/campaigns', (_req, res) => res.json({ campaigns: CAMPAIGNS }));
 
