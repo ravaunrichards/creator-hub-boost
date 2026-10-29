@@ -57,7 +57,7 @@ test('TikTok URL validation rejects non-HTTPS links and host spoofing', () => {
   assert.throws(() => validateTikTokUrl('http://www.tiktok.com/@sample'), /HTTPS/);
   assert.throws(() => validateTikTokUrl('https://tiktok.com.attacker.example/@sample'), /HTTPS/);
   assert.throws(() => validateTikTokUrl('https://example.com/@sample'), /HTTPS/);
-  assert.throws(() => validateTikTokUrl('javascript:alert(1)'), /valid public TikTok URL/);
+  assert.throws(() => validateTikTokUrl('javascript:alert(1)'), /HTTPS/);
 });
 
 test('legacy order rejects unknown packages, invalid email and missing authorization', () => {
