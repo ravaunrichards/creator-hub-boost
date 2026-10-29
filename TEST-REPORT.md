@@ -1,23 +1,33 @@
 # Validation report — Creator Hub Boost rewards release
 
-## Automated checks configured
+## Latest verified GitHub Actions run
 
-- GitHub Actions workflow: .github/workflows/ci.yml
-- Domain test command: npm test
-- JavaScript syntax command: npm run check
-- Coverage includes catalogue and package identifiers, server-side package selection, task validation, campaign validation, TikTok URL validation, authorization checks, and PayPal sandbox/live URL selection.
+- Workflow: **Repository checks**
+- Run: https://github.com/ravaunrichards/creator-hub-boost/actions/runs/40974130571
+- Verified source commit: `91fabfabd4bfb04f7d6de2e263407cd33971dd3f`
+- Result: **PASS**
+- Node.js runtime: Node 22
+- Domain tests: **7 passed, 0 failed**
+- Syntax checks: **PASS** for `server/index.js`, `server/domain.js`, `public/app.js`, and `public/admin.js`.
 
-## Verification state
+## Test coverage
 
-The earlier report described the previous cash-only storefront and must not be used as evidence that the new rewards implementation has passed. This report intentionally does not claim a successful test run until the current revision's CI result is confirmed.
+- Unique catalogue, task, coin-package, and campaign identifiers.
+- Positive server-defined coin/package prices.
+- Package lookup and server-side order pricing.
+- Task content submission validation.
+- Campaign package and authorization validation.
+- HTTPS TikTok URL validation, including rejecting spoofed hosts.
+- Email/policy validation for the legacy compatibility path.
+- PayPal sandbox/live API base URL selection.
 
-## Not yet verified by these checks
+## Not verified by this workflow
 
-- PostgreSQL schema/migration execution against a running database.
-- Registration, sign-in, task review, reward-credit and campaign-spend integration flows against PostgreSQL.
-- PayPal sandbox create/capture calls with configured merchant credentials.
-- PayPal webhook verification, payment refunds, email verification or password recovery.
-- Browser/device end-to-end tests, accessibility audit, performance testing or independent penetration testing.
-- Real external campaign fulfilment. The current campaign order queue is manual.
+- PostgreSQL schema or migration execution against a live database.
+- End-to-end registration, login, task review, once-only wallet credit, campaign debit, and refund flows against PostgreSQL.
+- PayPal sandbox checkout/capture with real configured merchant credentials.
+- PayPal verified webhooks, payment refunds/disputes, email verification or password recovery.
+- Browser/device end-to-end testing, accessibility, load/performance, or independent penetration testing.
+- External campaign fulfilment. The current campaign queue is manual by design; the app does not claim that a third-party service delivered engagement.
 
-Do not enable live payments or invite public users until CI passes and the remaining integration, security, policy, privacy and operational checks have been completed.
+Do not enable live payments or invite public users until the integration, security, privacy, platform-policy and operational checks above are addressed. A green unit/syntax run does not mean the service is production-ready.
