@@ -42,6 +42,7 @@ function setAuthMode(mode) {
 }
 function updateSignedInUI() {
   const signedIn = Boolean(state.user);
+  $('#account').classList.toggle('signed-in', signedIn);
   $('#authPanel').hidden = signedIn;
   $('#walletPanel').hidden = !signedIn;
   $('#authNav').textContent = signedIn ? 'My wallet ↓' : 'Sign in ↗';
@@ -295,27 +296,37 @@ $('#campaignForm').addEventListener('submit', async (event) => {
 });
 async function processPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('payment') === 'cancel') {
-    setNotice('PayPal checkout was cancelled. No coins were added.');
+  const mode = params.get('payment');
+  if (mode === 'cancel') {
+    sessionStorage.removeItem('chb-pending-purchase');
+    sessionStorage.removeItem('chb-pending-paypal-order');
     history.replaceState({}, '', '/');
+    setNotice('PayPal checkout was cancelled. No coins were added.');
     return;
   }
-  if (params.get('payment') !== 'return') return;
-  const purchaseId = params.get('purchase') || sessionStorage.getItem('chb-pending-purchase');
-  const paypalOrderId = params.get('token');
-  history.replaceState({}, '', '/');
-  if (!state.token || !purchaseId || !paypalOrderId) {
-    setNotice('Return to your signed-in session to confirm payment. Check your PayPal activity before retrying.', true);
+  if (mode === 'return') {
+    const returnedPurchase = params.get('purchase');
+    const returnedPayPalOrder = params.get('token');
+    if (returnedPurchase) sessionStorage.setItem('chb-pending-purchase', returnedPurchase);
+    if (returnedPayPalOrder) sessionStorage.setItem('chb-pending-paypal-order', returnedPayPalOrder);
+    history.replaceState({}, '', '/');
+  }
+  const purchaseId = sessionStorage.getItem('chb-pending-purchase');
+  const paypalOrderId = sessionStorage.getItem('chb-pending-paypal-order');
+  if (!purchaseId || !paypalOrderId) return;
+  if (!state.token || !state.user) {
+    setNotice('PayPal returned. Sign in to the same account to verify and credit this purchase.', true);
     return;
   }
   try {
     setNotice('Verifying PayPal payment…');
     const data = await api('/api/coins/capture-order', { method: 'POST', body: JSON.stringify({ purchaseId, paypalOrderId }) });
     sessionStorage.removeItem('chb-pending-purchase');
+    sessionStorage.removeItem('chb-pending-paypal-order');
     if (data.balance !== undefined) state.balance = Number(data.balance);
     $('#walletBalance').textContent = number(state.balance);
     setNotice(data.message || 'Payment status updated.');
-    await loadTransactions();
+    await Promise.all([loadTransactions(), loadAccount()]);
   } catch (error) {
     setNotice(error.message, true);
   }
