@@ -106,6 +106,55 @@ CREATE INDEX IF NOT EXISTS campaign_responses_participant_idx ON campaign_respon
 
 ALTER TABLE campaign_orders ADD COLUMN IF NOT EXISTS response_count SMALLINT NOT NULL DEFAULT 1 CHECK (response_count > 0);
 ALTER TABLE campaign_orders ADD COLUMN IF NOT EXISTS reward_coins_per_response INTEGER NOT NULL DEFAULT 0 CHECK (reward_coins_per_response >= 0);
+
+-- Backfill pending legacy feedback orders so their response quotas and rewards are correct.
+UPDATE campaign_orders
+SET response_count = CASE package_id
+      WHEN 'feedback-5' THEN 5
+      WHEN 'feedback-15' THEN 15
+      WHEN 'creative-1' THEN 1
+      WHEN 'creative-3' THEN 3
+      ELSE response_count
+    END,
+    reward_coins_per_response = CASE package_id
+      WHEN 'feedback-5' THEN 30
+      WHEN 'feedback-15' THEN 30
+      WHEN 'creative-1' THEN 100
+      WHEN 'creative-3' THEN 100
+      ELSE reward_coins_per_response
+    END
+WHERE package_id IN ('feedback-5','feedback-15','creative-1','creative-3')
+  AND reward_coins_per_response=0;
+
+-- Refund older discovery-spotlight orders that cannot be fulfilled by the new genuine-feedback workflow.
+WITH outdated AS MATERIALIZED (
+  SELECT o.id,o.user_id,o.coins_cost
+  FROM campaign_orders o
+  WHERE o.campaign_id='creator-spotlight'
+    AND o.status IN ('queued_for_review','in_progress')
+    AND NOT EXISTS (
+      SELECT 1 FROM campaign_responses r
+      WHERE r.campaign_order_id=o.id AND r.status='approved'
+    )
+),
+wallet_updates AS (
+  INSERT INTO wallets (user_id,balance)
+  SELECT user_id,SUM(coins_cost) FROM outdated GROUP BY user_id
+  ON CONFLICT (user_id) DO UPDATE
+    SET balance=wallets.balance+EXCLUDED.balance,updated_at=NOW()
+  RETURNING user_id
+),
+ledger_updates AS (
+  INSERT INTO wallet_transactions (user_id,direction,amount,transaction_type,reference_id,idempotency_key,description)
+  SELECT user_id,'credit',coins_cost,'campaign_refund',id,
+         'migration-creator-spotlight-refund:' || id,
+         'Refund of legacy discovery campaign not connected to genuine-feedback fulfilment'
+  FROM outdated
+  ON CONFLICT (idempotency_key) DO NOTHING
+  RETURNING id
+)
+UPDATE campaign_orders o SET status='cancelled',updated_at=NOW()
+FROM outdated x WHERE o.id=x.id;
 INSERT INTO tasks (id, title, description, instructions, reward_coins, task_type) VALUES
 ('video-feedback','Public video feedback','Help a creator improve their public video with useful, specific feedback.','Review the public video, then write constructive notes about its opening, clarity, pacing, or accessibility. Do not follow, like, comment for metric manipulation, or promise engagement.',25,'content_feedback'),
 ('profile-feedback','Creator profile review','Give a creator practical ideas to make their public profile easier to understand.','Review the creator bio, profile presentation, and content themes. Suggest one or two improvements. Do not exchange follows or ask for artificial engagement.',30,'profile_feedback'),
