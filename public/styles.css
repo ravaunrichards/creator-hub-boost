@@ -3,3 +3,94 @@
 @media(max-width:1000px){.hero{padding-left:6vw;padding-right:6vw;grid-template-columns:1.05fr .9fr}.hero h1{font-size:66px}.hero-art{transform:scale(.9)}.service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.trust-strip{padding-left:5vw;padding-right:5vw}.trust-strip>div{justify-content:flex-start}.how-section{gap:4vw;padding-left:6vw;padding-right:6vw}.steps{gap:8px}.steps article{padding:14px 12px}.track-form{grid-template-columns:1fr 1fr}.track-form .button{grid-column:1/-1}}
 @media(max-width:700px){.topbar{height:68px;padding:0 20px}.topbar nav,.top-cta{display:none}.menu-btn{display:block}.topbar.menu-open nav{display:flex;position:absolute;top:67px;left:0;right:0;padding:20px;background:#15152d;flex-direction:column;gap:18px}.hero{display:flex;flex-direction:column;align-items:stretch;padding:123px 23px 48px;gap:5px;min-height:auto}.hero h1{font-size:58px;letter-spacing:-3.5px;margin-top:20px}.hero-text{font-size:13px}.hero-actions{gap:9px}.hero-actions .button{padding:14px 13px;gap:10px;font-size:11px}.hero-art{height:310px;transform:none;max-width:360px;margin:5px auto 0}.main-orb{width:215px;height:215px}.orbit-a{width:300px;height:150px}.orbit-b{width:280px;height:215px}.card-top{top:28px;right:0}.card-bottom{bottom:25px;left:0}.tag-left{left:-7px;top:102px}.tag-right{right:-9px;bottom:103px}.trust-strip{grid-template-columns:1fr 1fr;padding:23px;gap:19px 10px}.trust-strip>div{gap:9px}.trust-icon{width:32px;height:32px;flex:0 0 32px}.trust-strip b{font-size:10px}.trust-strip small{font-size:9px}.services-section{padding:64px 20px}.section-head{align-items:flex-start;flex-direction:column;gap:15px}.section-head h2{font-size:35px}.section-head p{font-size:12px}.filter-row{gap:6px;margin-top:24px}.filter{padding:9px 12px;font-size:10px}.service-grid{grid-template-columns:1fr;gap:12px}.service-card{min-height:0;padding:18px}.service-card .service-symbol{margin-bottom:14px}.service-card p{margin-bottom:14px}.package-list{grid-template-columns:1fr 1fr}.service-card .button{margin-top:14px}.how-section{display:block;padding:63px 20px}.how-intro h2{font-size:41px}.how-intro>p{max-width:400px}.steps{grid-template-columns:1fr;gap:10px;margin-top:28px}.steps article{min-height:0;padding:16px;display:grid;grid-template-columns:50px 1fr;column-gap:14px;align-items:center}.step-num{grid-column:1/-1}.step-icon{grid-row:2/4;margin:14px 0 0}.steps h3{align-self:end;margin:0 0 5px}.steps p{align-self:start}.track-section{padding:50px 20px;display:block}.track-decoration{width:67px;height:67px;border-radius:20px;font-size:21px;margin-bottom:23px}.track-decoration span{font-size:12px}.track-copy h2{font-size:31px}.track-form{grid-template-columns:1fr}.track-form .button{grid-column:auto}.notice-section{padding:25px 20px}footer{padding:30px 20px;grid-template-columns:1fr;gap:8px}footer>div{justify-content:start;flex-wrap:wrap;margin:10px 0}footer>small{grid-column:auto}.order-modal{padding:25px 19px}.order-modal h2{font-size:25px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Rewards wallet and campaign marketplace */
+.account-section{padding:88px max(8vw,24px);background:#fff}
+.account-grid{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr);gap:22px;margin-top:30px;align-items:stretch}
+#account.signed-in .account-grid{grid-template-columns:1fr}
+.account-card,.wallet-panel{border:1px solid var(--line);border-radius:18px;background:#fff;padding:28px;box-shadow:0 14px 40px #19133a08;min-width:0}
+.account-card h3{font:600 25px 'Space Grotesk',sans-serif;letter-spacing:-1px;margin:12px 0 23px}
+.account-card form{display:grid;gap:15px}
+.account-card label,.task-submit-form label{display:grid;gap:7px;font-size:11px;font-weight:700;color:#38384f}
+.account-card input,.task-submit-form input,.task-submit-form textarea{width:100%;border:1px solid #e2e0ed;border-radius:9px;background:#fff;padding:12px 13px;font:400 12px 'DM Sans',sans-serif;color:var(--ink);outline:none}
+.account-card input:focus,.task-submit-form input:focus,.task-submit-form textarea:focus{border-color:#947eff;box-shadow:0 0 0 3px #8f7af01b}
+.account-card input::placeholder,.task-submit-form input::placeholder,.task-submit-form textarea::placeholder{color:#a1a0b2}
+.text-button{margin-top:17px;border:0;background:transparent;padding:0;color:#7257e7;font:700 11px 'DM Sans',sans-serif;cursor:pointer}
+.small-note{font-size:10px;line-height:1.7;color:#8b8ba0;margin:17px 0 0}
+.form-message{white-space:pre-wrap}
+.notice-pill{font-size:11px;line-height:1.45;padding:10px 14px;background:#f2efff;color:#6950d5;border-radius:999px}
+.notice-pill.notice-error{background:#fff0ef;color:#a93335}
+.wallet-panel-top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}
+.wallet-greeting{margin:9px 0 0;font-size:18px;color:#5d5d75}
+.wallet-greeting b{color:var(--ink)}
+.ghost-dark{border:1px solid var(--line);background:#fff;color:#4d4d63;box-shadow:none;padding:10px 14px}
+.balance-card{margin:22px 0 17px;padding:23px;border-radius:15px;background:linear-gradient(125deg,#18162f,#342669);color:#fff}
+.balance-card>span,.balance-card small{font-size:11px;color:#d2caff}
+.balance-card>div{display:flex;align-items:baseline;gap:10px;margin:10px 0}
+.balance-card strong{font:600 42px 'Space Grotesk',sans-serif;letter-spacing:-2px;color:#fff}
+.balance-card>div span{font-size:13px;color:#c8f7df}
+.balance-card small{display:block;line-height:1.6}
+.wallet-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wallet-stats>div{border:1px solid var(--line);border-radius:11px;padding:12px;min-width:0}
+.wallet-stats small,.wallet-stats b{display:block;overflow-wrap:anywhere}
+.wallet-stats small{font-size:10px;color:var(--muted);margin-bottom:6px}
+.wallet-stats b{font-size:11px}
+.wallet-panel h4{font:600 15px 'Space Grotesk',sans-serif;margin:23px 0 8px}
+.transaction-list{display:grid}
+.transaction-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0eef6;min-width:0}
+.transaction-mark{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;font-size:16px;font-weight:700}
+.transaction-mark.credit{background:#e7f9f0;color:#168454}.transaction-mark.debit{background:#fff0ef;color:#b64448}
+.transaction-row>div{min-width:0}.transaction-row b,.transaction-row small{display:block;overflow-wrap:anywhere}
+.transaction-row b{font-size:11px;font-weight:600}.transaction-row small{font-size:9px;color:#8b8ba0;margin-top:4px}
+.transaction-row>strong{font-size:10px;white-space:nowrap}.positive{color:#168454}.negative{color:#b64448}
+.muted{font-size:12px;line-height:1.7;color:var(--muted)}
+.task-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:30px}
+.task-card,.campaign-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:22px;min-width:0}
+.task-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.task-icon,.campaign-symbol{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#f0ecff;color:#7658ee;font-size:22px}
+.coin-reward{padding:9px 12px;background:#e9f9f0;color:#16784d;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.task-card h3,.campaign-card h3{font:600 20px 'Space Grotesk',sans-serif;letter-spacing:-.6px;margin:17px 0 9px}
+.task-card>p,.campaign-card>p{font-size:12px;line-height:1.8;color:var(--muted);margin:0 0 14px}
+.task-card details{margin:15px 0;padding:12px;background:#faf9fe;border-radius:9px}
+.task-card summary{font-size:11px;font-weight:700;cursor:pointer;color:#6950d5}
+.task-card details p{font-size:11px;line-height:1.7;color:#72718a;margin:10px 0 0}
+.task-submit-form{display:grid;gap:13px;margin-top:17px}
+.task-submit-form textarea{resize:vertical;min-height:85px;line-height:1.6}
+.task-submit-form .button{font-size:11px;padding:12px}
+.task-status{margin-top:15px;padding:12px 13px;border-radius:9px;font-size:11px;line-height:1.6}
+.task-status p{margin:5px 0}.task-status small{display:block;margin-top:5px}
+.status-pending,.status-queued_for_review{background:#fff7e7;color:#8b5a10}
+.status-approved,.status-completed{background:#e9f9f0;color:#16784d}
+.status-rejected,.status-cancelled,.status-refunded{background:#fff0ef;color:#a83d42}
+.empty-state{grid-column:1/-1;text-align:center;padding:38px 24px;border:1px dashed #d8d3ee;border-radius:15px;background:#faf9fe}
+.empty-state>span{font-size:27px}.empty-state h3{font:600 20px 'Space Grotesk',sans-serif;margin:12px 0 7px}.empty-state p{font-size:12px;line-height:1.7;color:var(--muted);margin:0 auto 18px;max-width:470px}
+.coin-section{padding:88px max(8vw,24px);background:#f8f8fc}
+.coin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-top:30px}
+.coin-card{position:relative;border:1px solid var(--line);border-radius:16px;background:white;padding:22px 18px;text-align:center;min-width:0;display:flex;flex-direction:column;align-items:center}
+.coin-popular{border-color:#9a86ff;box-shadow:0 14px 34px #7258ed13}
+.popular-tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#7155ed;color:white;border-radius:999px;padding:6px 10px;font-size:8px;font-weight:700;letter-spacing:1px;white-space:nowrap}
+.coin-emblem{width:51px;height:51px;border-radius:16px;background:#f3efff;display:grid;place-items:center;font-size:26px}
+.coin-plan{font-size:11px;color:#77768b;margin:16px 0 6px}
+.coin-amount{font:600 clamp(20px,2.4vw,31px) 'Space Grotesk',sans-serif;letter-spacing:-1px;white-space:nowrap}.coin-amount small{font:500 11px 'DM Sans',sans-serif;color:#7c7a90;letter-spacing:0}
+.coin-price{font:600 21px 'Space Grotesk',sans-serif;margin:9px 0 2px}.coin-price span{font:500 10px 'DM Sans',sans-serif;color:var(--muted)}
+.coin-note{font-size:10px;color:#8b8ba0;margin:8px 0 16px}.coin-card .button{margin-top:auto;font-size:10px;padding:12px 8px;gap:5px}
+.outline-button{border:1px solid #dcd8f1;background:#fff;color:#6650cf;box-shadow:none}.outline-button:hover{background:#f5f2ff}
+.campaign-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:30px}
+.campaign-type{font-size:9px;font-weight:700;letter-spacing:1.5px;color:#8168e9}
+.campaign-symbol{margin-top:15px;width:45px;height:45px;font-size:21px}
+.campaign-packages{display:grid;gap:9px;margin-top:21px}
+.campaign-package{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:13px 0;border-top:1px solid #efedf5;align-items:center}
+.campaign-package>div{min-width:0}.campaign-package b,.campaign-package small{display:block}
+.campaign-package b{font-size:11px}.campaign-package small{font-size:10px;color:#89879b;line-height:1.5;margin-top:4px}
+.campaign-package strong{font-size:11px;white-space:nowrap;color:#6750ce}
+.campaign-package button{grid-column:1/-1;padding:10px;font-size:10px}
+.orders-section{align-items:flex-start}
+.order-list{margin-top:20px;border-top:1px solid var(--line)}
+.order-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:15px 0;border-bottom:1px solid #e8e6f0}
+.order-row>div{display:grid;gap:5px;min-width:0}
+.order-row b{font-size:12px}.order-row span{font-size:11px;color:#69697f}.order-row small{font-size:10px;color:#9290a3}
+.order-row .status-pill{font-size:9px;text-transform:capitalize;font-weight:700;white-space:nowrap;border-radius:999px;padding:7px 9px}
+@media(max-width:1050px){.campaign-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.coin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-section,.coin-section{padding-left:6vw;padding-right:6vw}}
+@media(max-width:700px){.account-section,.coin-section{padding:60px 20px}.account-grid{grid-template-columns:1fr}.account-card,.wallet-panel{padding:21px 17px}.task-grid,.campaign-grid{grid-template-columns:1fr}.coin-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.coin-card{padding:20px 10px}.coin-card .button{font-size:9px}.coin-amount{font-size:23px}.coin-price{font-size:18px}.wallet-panel-top{align-items:center}.balance-card strong{font-size:36px}.transaction-row{grid-template-columns:25px minmax(0,1fr)}.transaction-row>strong{grid-column:2}.order-row{align-items:flex-start}.order-row .status-pill{max-width:120px;text-align:center;white-space:normal}}
+@media(max-width:390px){.coin-grid{grid-template-columns:1fr}.wallet-stats{grid-template-columns:1fr}}
