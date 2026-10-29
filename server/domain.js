@@ -24,34 +24,23 @@ export const TASK_SEEDS = [
 
 export const CAMPAIGNS = [
   {
-    id: 'creator-spotlight',
-    name: 'Creator discovery spotlight',
-    category: 'Discovery',
-    description: 'Request placement for your public creator profile in Creator Hub Boost discovery areas. This is on-platform promotion, not a promise of TikTok followers or likes.',
-    packages: [
-      { id: 'spotlight-1day', label: '1-day spotlight', detail: 'One day of eligible in-app placement', coins: 150 },
-      { id: 'spotlight-3day', label: '3-day spotlight', detail: 'Three days of eligible in-app placement', coins: 350 },
-      { id: 'spotlight-7day', label: '7-day spotlight', detail: 'Seven days of eligible in-app placement', coins: 700 }
-    ]
-  },
-  {
     id: 'video-feedback-panel',
-    name: 'Real-audience feedback panel',
-    category: 'Feedback',
-    description: 'Collect useful human feedback about your public video from eligible platform participants. No purchased likes, follows, or artificial metric guarantees.',
+    name: 'Genuine audience feedback',
+    category: 'Human feedback',
+    description: 'Put your public TikTok video in front of real Creator Hub Boost members and receive reviewed, useful feedback. People decide independently whether they want to follow or engage; those actions are never required for a reward.',
     packages: [
-      { id: 'feedback-5', label: '5 feedback responses', detail: 'Request five relevant feedback responses', coins: 250 },
-      { id: 'feedback-15', label: '15 feedback responses', detail: 'Request fifteen relevant feedback responses', coins: 600 }
+      { id: 'feedback-5', label: '5 feedback responses', detail: 'Five independent human feedback submissions', coins: 250, responseCount: 5, rewardCoinsPerResponse: 30 },
+      { id: 'feedback-15', label: '15 feedback responses', detail: 'Fifteen independent human feedback submissions', coins: 600, responseCount: 15, rewardCoinsPerResponse: 30 }
     ]
   },
   {
     id: 'caption-review',
-    name: 'Caption & creative review',
-    category: 'Creative',
-    description: 'Request review of a public video caption or creative presentation to help improve clarity and audience fit.',
+    name: 'Creative & caption review',
+    category: 'Creative research',
+    description: 'Request real human feedback on a public video, its opening, clarity, accessibility, or caption. Participants earn coins for reviewed feedback—not for a required TikTok like, follow, comment, or share.',
     packages: [
-      { id: 'creative-1', label: 'Single review', detail: 'One structured creative review', coins: 200 },
-      { id: 'creative-3', label: 'Three reviews', detail: 'Three independent creative reviews', coins: 450 }
+      { id: 'creative-1', label: '1 structured review', detail: 'One independent feedback submission', coins: 200, responseCount: 1, rewardCoinsPerResponse: 100 },
+      { id: 'creative-3', label: '3 structured reviews', detail: 'Three independent feedback submissions', coins: 450, responseCount: 3, rewardCoinsPerResponse: 100 }
     ]
   }
 ];
@@ -82,7 +71,7 @@ export function validateCampaignOrder(input, campaigns = CAMPAIGNS) {
   if (!pack) throw new Error('Choose a valid campaign package.');
   const targetUrl = validateTikTokUrl(input.targetUrl);
   if (input.policyAccepted !== true) throw new Error('Confirm that you own or are authorized to promote this public content.');
-  return { campaignId: campaign.id, campaignName: campaign.name, packageId: pack.id, packageLabel: pack.label, coinsCost: pack.coins, targetUrl };
+  return { campaignId: campaign.id, campaignName: campaign.name, packageId: pack.id, packageLabel: pack.label, coinsCost: pack.coins, responseCount: pack.responseCount, rewardCoinsPerResponse: pack.rewardCoinsPerResponse, targetUrl };
 }
 
 export function validateOrder(input) {
