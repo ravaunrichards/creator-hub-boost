@@ -1,21 +1,110 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#101226"><meta name="description" content="Creator Hub Boost — transparent campaign services for creators.">
-  <title>Creator Hub Boost — Creator growth, clearly</title><link rel="stylesheet" href="/styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101226">
+  <meta name="description" content="Creator Hub Boost — earn virtual coins through reviewed creator tasks, buy coins with PayPal, and use coins for creator discovery campaigns.">
+  <title>Creator Hub Boost — Earn. Create. Grow.</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="#top" aria-label="Creator Hub Boost home"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a><nav><a href="#services">Services</a><a href="#how">How it works</a><a href="#track">Track order</a></nav><a class="top-cta" href="#services">Explore services <span>↗</span></a><button class="menu-btn" aria-label="Open menu" id="menuBtn">☰</button></header>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Creator Hub Boost home"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a>
+    <nav><a href="#tasks">Earn coins</a><a href="#wallet">Buy coins</a><a href="#campaigns">Campaigns</a><a href="#orders">My orders</a></nav>
+    <a class="top-cta" href="#account" id="authNav">Sign in <span>↗</span></a>
+    <button class="menu-btn" aria-label="Open menu" id="menuBtn">☰</button>
+  </header>
+
   <main id="top">
-    <section class="hero"><div class="hero-glow glow-one"></div><div class="hero-glow glow-two"></div><div class="hero-copy"><div class="eyebrow"><span class="pulse"></span> A clearer way to run creator campaigns</div><h1>Build your next<br><span>moment.</span></h1><p class="hero-text">Creator campaigns, organized in one place. Choose a service, review the details, and keep track of every order without the guesswork.</p><div class="hero-actions"><a class="button primary" href="#services">Browse services <span>→</span></a><a class="button ghost" href="#how">How it works <span>↗</span></a></div><div class="hero-proof"><div class="proof-icon">✓</div><p><b>Clear packages. Clear status.</b><small>Transparent pricing and order tracking.</small></p></div></div><div class="hero-art" aria-label="Abstract creator campaign dashboard illustration"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="float-card card-top"><span class="mini-dot purple"></span><span>Campaign overview</span><b>↗</b></div><div class="main-orb"><div class="orb-inner"><div class="play-icon">▶</div><span>CREATE</span><b>YOUR MOMENT</b></div></div><div class="float-card card-bottom"><span class="metric-icon">✦</span><div><small>Campaign workspace</small><b>All in one place</b></div><span class="arrow-circle">↗</span></div><div class="tiny-tag tag-left">CREATOR FIRST</div><div class="tiny-tag tag-right">MADE TO GROW</div></div></section>
-    <section class="trust-strip"><div><span class="trust-icon">◇</span><p><b>Simple ordering</b><small>Know what you're choosing</small></p></div><div><span class="trust-icon">◎</span><p><b>Secure checkout</b><small>PayPal checkout flow</small></p></div><div><span class="trust-icon">⌁</span><p><b>Order visibility</b><small>Track status with a link</small></p></div><div><span class="trust-icon">✳</span><p><b>Creator focused</b><small>Built around your workflow</small></p></div></section>
-    <section class="services-section" id="services"><div class="section-head"><div><div class="eyebrow dark-eyebrow">THE SERVICE DESK</div><h2>Choose your next move.</h2><p>Explore available campaign types and select the package that fits your goal.</p></div><div class="service-note"><span>✦</span> Prices shown in USD</div></div><div class="filter-row" id="filters"><button class="filter active" data-filter="All">All services</button><button class="filter" data-filter="Views">Views</button><button class="filter" data-filter="Likes">Engagement</button><button class="filter" data-filter="Profile">Profile</button><button class="filter" data-filter="Shares">Shares</button></div><div class="service-grid" id="serviceGrid"><div class="loading-card">Loading services…</div></div><p class="policy-note">Campaign delivery and results depend on platform policies, eligibility and availability. No package guarantees virality, organic reach or a specific business outcome.</p></section>
-    <section class="how-section" id="how"><div class="how-intro"><div class="eyebrow">THREE CLEAR STEPS</div><h2>From idea<br>to <span>in progress.</span></h2><p>No complicated dashboard to figure out. Follow the steps and keep your order reference close.</p></div><div class="steps"><article><div class="step-num">01 <span>↗</span></div><div class="step-icon">⌕</div><h3>Choose a service</h3><p>Pick a campaign type and package. Check the details before you continue.</p></article><article><div class="step-num">02 <span>↗</span></div><div class="step-icon">↗</div><h3>Submit your order</h3><p>Enter your public content link and email. Review your total before checkout.</p></article><article><div class="step-num">03 <span>↗</span></div><div class="step-icon">◷</div><h3>Follow progress</h3><p>Use your private tracking link to check the latest order status.</p></article></div></section>
-    <section class="track-section" id="track"><div class="track-decoration">CH<span>+</span></div><div class="track-copy"><div class="eyebrow">YOUR ORDER, YOUR VIEW</div><h2>Already placed an order?</h2><p>Open the private tracking link you received after submitting your order to see its status.</p><div class="track-form"><input id="trackId" placeholder="Order ID" aria-label="Order ID"><input id="trackToken" placeholder="Private tracking token" aria-label="Private tracking token"><button class="button primary" id="trackBtn">Check status →</button></div><div id="trackResult" class="track-result" aria-live="polite"></div></div></section>
-    <section class="notice-section"><span class="notice-icon">i</span><div><b>Responsible campaign use</b><p>Only submit links to content you own or are authorized to promote. Never share your social account password. Campaigns must follow TikTok's terms and applicable law; services that rely on fake engagement, bots or deceptive delivery should not be used.</p></div></section>
+    <section class="hero">
+      <div class="hero-glow glow-one"></div><div class="hero-glow glow-two"></div>
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span> A rewards loop built for creators</div>
+        <h1>Earn coins.<br><span>Boost ideas.</span></h1>
+        <p class="hero-text">Complete useful creator tasks to earn virtual coins, top up securely with PayPal, and spend your balance on creator discovery and real human feedback campaigns.</p>
+        <div class="hero-actions"><a class="button primary" href="#tasks">Explore earning tasks <span>→</span></a><a class="button ghost" href="#wallet">Get coin packages <span>↗</span></a></div>
+        <div class="hero-proof"><div class="proof-icon">✓</div><p><b>Every coin has a record.</b><small>Reviewed rewards, clear balances, and transaction history.</small></p></div>
+      </div>
+      <div class="hero-art" aria-label="Abstract virtual coin rewards illustration">
+        <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+        <div class="main-orb"><div class="orb-inner"><div class="play-icon">✦</div><span>CREATOR</span><b>COIN ECONOMY</b></div></div>
+        <div class="float-card card-top"><span class="mini-dot purple"></span><span>Rewards wallet</span><b>🪙</b></div>
+        <div class="float-card card-bottom"><span class="metric-icon">✦</span><div><small>One platform</small><b>Tasks · Coins · Campaigns</b></div><span class="arrow-circle">↗</span></div>
+        <div class="tiny-tag tag-left">EARN REWARDS</div><div class="tiny-tag tag-right">CREATOR FIRST</div>
+      </div>
+    </section>
+
+    <section class="trust-strip">
+      <div><span class="trust-icon">🪙</span><p><b>Earn coins</b><small>Submit tasks for review</small></p></div>
+      <div><span class="trust-icon">◎</span><p><b>Pay with PayPal</b><small>Fixed coin packages</small></p></div>
+      <div><span class="trust-icon">⌁</span><p><b>Spend in-app</b><small>Wallet-priced campaigns</small></p></div>
+      <div><span class="trust-icon">✓</span><p><b>Traceable</b><small>Wallet and order history</small></p></div>
+    </section>
+
+    <section class="account-section" id="account">
+      <div class="section-head"><div><div class="eyebrow dark-eyebrow">YOUR ACCOUNT</div><h2>Your creator dashboard.</h2><p>Sign in to earn rewards, manage coins, and submit campaigns.</p></div><div id="accountNotice" class="notice-pill">Sign in to access your wallet</div></div>
+      <div class="account-grid">
+        <div class="account-card" id="authPanel">
+          <div class="eyebrow dark-eyebrow" id="authModeLabel">WELCOME BACK</div><h3 id="authTitle">Sign in to Creator Hub Boost</h3>
+          <form id="authForm">
+            <label id="displayNameWrap" hidden>Display name<input id="displayName" name="displayName" maxlength="40" autocomplete="nickname" placeholder="How creators see you"></label>
+            <label>Email address<input id="authEmail" name="email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com" required></label>
+            <label>Password<input id="authPassword" name="password" type="password" minlength="10" maxlength="200" autocomplete="current-password" placeholder="At least 10 characters" required></label>
+            <button class="button primary full-button" id="authSubmit" type="submit">Sign in →</button>
+          </form>
+          <button class="text-button" id="toggleAuthMode" type="button">New here? Create an account</button>
+          <div id="authMessage" class="form-message" aria-live="polite"></div>
+          <p class="small-note">This starter release does not yet send email-verification or password-reset emails. Use a unique password.</p>
+        </div>
+        <div class="wallet-panel" id="walletPanel" hidden>
+          <div class="wallet-panel-top"><div><div class="eyebrow dark-eyebrow">YOUR VIRTUAL WALLET</div><p class="wallet-greeting">Welcome, <b id="walletName"></b></p></div><button class="button ghost-dark" id="signOutBtn" type="button">Sign out</button></div>
+          <div class="balance-card"><span>Available balance</span><div><strong id="walletBalance">0</strong><span>🪙 coins</span></div><small>Coins are virtual platform credits, not cash or withdrawable funds.</small></div>
+          <div class="wallet-stats"><div><small>Account</small><b id="walletEmail"></b></div><div><small>Ledger</small><b>Every credit & debit</b></div></div>
+          <h4>Recent wallet activity</h4><div id="transactionList" class="transaction-list"><p class="muted">Loading wallet history…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="services-section" id="tasks">
+      <div class="section-head"><div><div class="eyebrow dark-eyebrow">EARN COINS 🪙</div><h2>Tasks that reward your input.</h2><p>Submit useful creator feedback. Rewards are added only after review, so balances cannot be self-awarded from the browser.</p></div><div class="service-note"><span>✦</span> Earn virtual coins</div></div>
+      <div id="taskGrid" class="task-grid"><div class="loading-card">Sign in to load available tasks…</div></div>
+      <p class="policy-note">Tasks focus on helpful feedback and creator discovery. They do not pay users to exchange follows, likes, or other artificial engagement metrics.</p>
+    </section>
+
+    <section class="coin-section" id="wallet">
+      <div class="section-head"><div><div class="eyebrow dark-eyebrow">COIN SHOP</div><h2>Top up your coin wallet.</h2><p>Choose a package and pay through PayPal. Coins are credited only after server-side payment confirmation.</p></div><div class="service-note"><span>◎</span> Prices shown in USD</div></div>
+      <div id="coinGrid" class="coin-grid"><div class="loading-card">Loading coin packages…</div></div>
+      <p class="policy-note">Coin package prices and quantities are set on the server. Never share your PayPal password or social account password with a campaign provider.</p>
+    </section>
+
+    <section class="services-section campaign-section" id="campaigns">
+      <div class="section-head"><div><div class="eyebrow dark-eyebrow">CAMPAIGN MARKETPLACE</div><h2>Use coins for creator growth.</h2><p>Spend your balance on in-app creator discovery, structured feedback, and creative reviews.</p></div><div class="service-note"><span>🪙</span> Pay with coins</div></div>
+      <div id="campaignGrid" class="campaign-grid"><div class="loading-card">Loading campaigns…</div></div>
+      <p class="policy-note">Campaign requests are queued for review in this starter release. Automated external delivery is not connected. No package promises TikTok follows, likes, or guaranteed results.</p>
+    </section>
+
+    <section class="track-section orders-section" id="orders">
+      <div class="track-decoration">CH<span>+</span></div><div class="track-copy"><div class="eyebrow">YOUR CAMPAIGNS, YOUR VIEW</div><h2>Track your campaign orders.</h2><p>Sign in to review campaign packages, coin costs, and the latest status.</p><div id="orderList" class="order-list"><p class="muted">Sign in to view your orders.</p></div></div>
+    </section>
+
+    <section class="notice-section"><span class="notice-icon">i</span><div><b>Built for transparent, responsible promotion</b><p>Only submit content you own or are authorized to promote. Creator Hub Boost does not request social account passwords and does not support bots, fake activity, or exchange-for-follow schemes. Paid campaigns in this starter are recorded for review; an external fulfilment provider is not yet connected.</p></div></section>
   </main>
-  <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a><p>Original creator campaign workspace.</p><div><a href="#services">Services</a><a href="#how">How it works</a><a href="#track">Order tracking</a></div><small>© <span id="year"></span> Creator Hub Boost. All rights reserved.</small></footer>
-  <div class="modal-backdrop" id="orderModal" hidden><section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="closeModal" aria-label="Close">×</button><div class="eyebrow dark-eyebrow">ORDER DETAILS</div><h2 id="modalTitle">Set up your campaign</h2><p class="modal-subtitle" id="modalService">Choose a package to begin.</p><form id="orderForm"><label>Package<select id="packageSelect" required></select></label><label>Public TikTok profile or video URL<input id="targetUrl" type="url" placeholder="https://www.tiktok.com/@creator/video/..." required maxlength="500"></label><label>Email for your receipt and tracking link<input id="email" type="email" placeholder="you@example.com" required maxlength="254" autocomplete="email"></label><label class="consent"><input id="policyAccepted" type="checkbox" required><span>I own or am authorized to promote this public content, and I agree to use services that comply with platform rules.</span></label><div class="order-total"><span>Order total</span><b id="orderTotal">$0.00 USD</b></div><button class="button primary full-button" id="submitOrder" type="submit">Continue to order review →</button><p class="secure-copy">Your account password is never requested.</p><div id="orderMessage" class="form-message" aria-live="polite"></div></form></section></div>
+
+  <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a><p>Earn coins. Support creators. Grow responsibly.</p><div><a href="#tasks">Tasks</a><a href="#wallet">Coin shop</a><a href="#campaigns">Campaigns</a><a href="/admin.html">Admin</a></div><small>© <span id="year"></span> Creator Hub Boost. All rights reserved.</small></footer>
+
+  <div class="modal-backdrop" id="campaignModal" hidden>
+    <section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="campaignModalTitle">
+      <button class="modal-close" id="closeCampaignModal" aria-label="Close">×</button><div class="eyebrow dark-eyebrow">CAMPAIGN REQUEST</div><h2 id="campaignModalTitle">Confirm your campaign</h2><p class="modal-subtitle" id="campaignModalSubtitle"></p>
+      <form id="campaignForm">
+        <label>Public TikTok profile or video URL<input id="campaignTargetUrl" type="url" placeholder="https://www.tiktok.com/@creator/video/..." maxlength="500" required></label>
+        <label class="consent"><input id="campaignPolicyAccepted" type="checkbox" required><span>I own or am authorized to promote this content and agree to the campaign rules.</span></label>
+        <div class="order-total"><span>Cost from wallet</span><b id="campaignCost">0 coins</b></div>
+        <button class="button primary full-button" id="submitCampaign" type="submit">Submit campaign →</button>
+        <div id="campaignMessage" class="form-message" aria-live="polite"></div>
+      </form>
+    </section>
+  </div>
   <script src="/app.js" defer></script>
-</body></html>
+</body>
+</html>
