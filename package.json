@@ -1,10 +1,27 @@
 {
   "name": "creator-hub-boost",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Original creator campaign storefront and order-management starter inspired by service-catalogue workflows.",
+  "description": "Creator rewards platform with reviewed tasks, a virtual coin wallet, PayPal top-ups, and coin-funded creator campaigns.",
   "type": "module",
-  "scripts": {"start":"node server/index.js", "dev":"node --watch server/index.js", "test":"node --test", "check":"node --check server/index.js && node --check server/domain.js && node --check public/app.js"},
-  "engines": {"node": ">=20"},
-  "dependencies": {"bcryptjs":"^2.4.3", "cors":"^2.8.5", "dotenv":"^16.4.7", "express":"^4.21.2", "express-rate-limit":"^7.5.0", "helmet":"^8.0.0", "jsonwebtoken":"^9.0.2", "pg":"^8.13.1", "zod":"^3.24.1"}
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test",
+    "check": "node --check server/index.js && node --check server/domain.js && node --check public/app.js && node --check public/admin.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
+  }
 }
