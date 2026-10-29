@@ -193,7 +193,7 @@ function renderCampaigns() {
   $('#campaignGrid').innerHTML = state.campaigns.map(campaign => `<article class="campaign-card">
     <div class="campaign-type">${escapeHtml(campaign.category)} CAMPAIGN</div><div class="campaign-symbol">${campaign.category === 'Discovery' ? '◎' : campaign.category === 'Feedback' ? '✦' : 'Aa'}</div>
     <h3>${escapeHtml(campaign.name)}</h3><p>${escapeHtml(campaign.description)}</p>
-    <div class="campaign-packages">${campaign.packages.map(pack => `<div class="campaign-package"><div><b>${escapeHtml(pack.label)}</b><small>${escapeHtml(pack.detail)}</small></div><strong>${number(pack.coins)} 🪙</strong><button class="button outline-button" data-campaign="${escapeHtml(campaign.id)}" data-package="${escapeHtml(pack.id)}">Select</button></div>`).join('')}</div>
+    <div class="campaign-packages">${campaign.packages.map(pack => `<div class="campaign-package"><div><b>${escapeHtml(pack.label)}</b><small>${escapeHtml(pack.detail)}</small><small>${number(pack.responseCount)} response(s) · ${number(pack.rewardCoinsPerResponse)} coins per approved response</small></div><strong>${number(pack.coins)} 🪙</strong><button class="button outline-button" data-campaign="${escapeHtml(campaign.id)}" data-package="${escapeHtml(pack.id)}">Select</button></div>`).join('')}</div>
   </article>`).join('');
 }
 function openCampaign(campaignId, packageId) {
