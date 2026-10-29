@@ -1,13 +1,4 @@
-import { randomUUID } from 'node:crypto';
-
-// Legacy cash catalogue retained for backwards-compatible domain tests/API consumers.
-export const SERVICES = [
-  { id: 'video-views', name: 'Video discovery campaign', category: 'Views', description: 'Promote eligible public videos to reach more real viewers.', packages: [{ id: 'views-1k', label: '1,000 views', price: 2.99 }, { id: 'views-5k', label: '5,000 views', price: 9.99 }, { id: 'views-10k', label: '10,000 views', price: 17.99 }] },
-  { id: 'video-likes', name: 'Video feedback campaign', category: 'Likes', description: 'Request genuine feedback on eligible public content.', packages: [{ id: 'likes-100', label: 'Feedback starter', price: 2.49 }, { id: 'likes-500', label: 'Feedback plus', price: 8.99 }, { id: 'likes-1k', label: 'Feedback pro', price: 14.99 }] },
-  { id: 'profile-reach', name: 'Profile discovery campaign', category: 'Profile', description: 'Improve discovery of a public creator profile; results are not guaranteed.', packages: [{ id: 'profile-basic', label: 'Starter campaign', price: 4.99 }, { id: 'profile-plus', label: 'Growth campaign', price: 12.99 }, { id: 'profile-pro', label: 'Extended campaign', price: 24.99 }] },
-  { id: 'video-shares', name: 'Content discovery campaign', category: 'Shares', description: 'Request compliant discovery for a public video link.', packages: [{ id: 'shares-50', label: 'Discovery starter', price: 3.99 }, { id: 'shares-250', label: 'Discovery plus', price: 12.99 }] }
-];
-
+// Campaign catalogues use virtual coin pricing; no fixed TikTok metric delivery is sold.
 export const COIN_PACKAGES = [
   { id: 'coins-500', name: 'Starter', coins: 500, price: 4.99, currency: 'USD', popular: false },
   { id: 'coins-1200', name: 'Creator', coins: 1200, price: 9.99, currency: 'USD', popular: true },
@@ -72,18 +63,6 @@ export function validateCampaignOrder(input, campaigns = CAMPAIGNS) {
   const targetUrl = validateTikTokUrl(input.targetUrl);
   if (input.policyAccepted !== true) throw new Error('Confirm that you own or are authorized to promote this public content.');
   return { campaignId: campaign.id, campaignName: campaign.name, packageId: pack.id, packageLabel: pack.label, coinsCost: pack.coins, responseCount: pack.responseCount, rewardCoinsPerResponse: pack.rewardCoinsPerResponse, targetUrl };
-}
-
-export function validateOrder(input) {
-  const service = SERVICES.find(s => s.id === input.serviceId);
-  if (!service) throw new Error('Choose a valid service.');
-  const pack = service.packages.find(p => p.id === input.packageId);
-  if (!pack) throw new Error('Choose a valid package.');
-  const targetUrl = validateTikTokUrl(input.targetUrl);
-  const email = String(input.email ?? '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error('Enter a valid email address.');
-  if (input.policyAccepted !== true) throw new Error('Confirm that you own or are authorized to promote this public content.');
-  return { id: randomUUID(), serviceId: service.id, serviceName: service.name, packageId: pack.id, packageLabel: pack.label, amount: pack.price, currency: 'USD', targetUrl, email, status: 'awaiting_payment', createdAt: new Date().toISOString() };
 }
 
 export function paypalBaseUrl(env = process.env.PAYPAL_ENV) {
