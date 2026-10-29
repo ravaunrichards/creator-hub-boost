@@ -60,7 +60,7 @@ export function validateTikTokUrl(value) {
   const targetUrl = String(value ?? '').trim();
   let parsed;
   try { parsed = new URL(targetUrl); } catch { throw new Error('Enter a valid public TikTok URL.'); }
-  if (parsed.protocol !== 'https:' || !/(^|\\.)tiktok\\.com$/i.test(parsed.hostname) || parsed.username || parsed.password) {
+  if (parsed.protocol !== 'https:' || !/(^|\.)tiktok\.com$/i.test(parsed.hostname) || parsed.username || parsed.password) {
     throw new Error('Use an HTTPS public TikTok URL hosted on tiktok.com.');
   }
   return targetUrl;
@@ -92,7 +92,7 @@ export function validateOrder(input) {
   if (!pack) throw new Error('Choose a valid package.');
   const targetUrl = validateTikTokUrl(input.targetUrl);
   const email = String(input.email ?? '').trim().toLowerCase();
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) throw new Error('Enter a valid email address.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error('Enter a valid email address.');
   if (input.policyAccepted !== true) throw new Error('Confirm that you own or are authorized to promote this public content.');
   return { id: randomUUID(), serviceId: service.id, serviceName: service.name, packageId: pack.id, packageLabel: pack.label, amount: pack.price, currency: 'USD', targetUrl, email, status: 'awaiting_payment', createdAt: new Date().toISOString() };
 }
