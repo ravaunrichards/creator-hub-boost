@@ -1,69 +1,73 @@
 # Creator Hub Boost
 
-Creator Hub Boost is an independent creator rewards and promotion platform. Its core loop is:
+Creator Hub Boost is a creator rewards and audience-feedback platform. Members earn virtual coins by completing reviewable tasks, can purchase additional coin packages through PayPal, and spend coins to request useful feedback from real people about their public creator content.
 
-1. Members complete creator-support tasks and submit useful feedback for review.
-2. An administrator approves eligible work; the server credits the member's virtual coin wallet.
-3. Members can buy additional fixed coin packages through PayPal.
-4. Members spend virtual coins on Creator Hub Boost campaign requests.
-5. Members can view wallet transactions and campaign-order statuses.
+**Genuine means human, voluntary interest—not bots, fake accounts, or paid promises of TikTok follows/likes.** The platform can give creators real human discovery and feedback, but it must not require or reward a specific TikTok follow, like, share, or comment. TikTok identifies engagement-exchange incentives and services that artificially inflate metrics as prohibited fake engagement. See [TikTok's explanation of how it counters deceptive behaviour](https://newsroom.tiktok.com/how-tiktok-counters-deceptive-behaviour?lang=en-150) and its [Creator Fraud, Abuse, and Misconduct Policy](https://seller-us.tiktok.com/university/essay?default_language=en&knowledge_id=5453247374362369).
 
-This implementation is an early functional release. It does not claim to be TikSpark, use TikSpark source code or branding, or connect an external campaign-fulfilment provider.
+## How the platform works
+
+1. A member registers and receives a virtual-coin wallet.
+2. Members complete eligible standalone tasks and submit their original work. An administrator reviews it and approves or rejects it.
+3. A member may buy fixed coin packages using PayPal. The server verifies the purchase reference, amount and currency before crediting coins.
+4. A creator chooses a feedback campaign and pays its coin cost from their wallet. The campaign is listed in the Available Feedback task board for other members; the creator cannot complete their own campaign.
+5. A participant opens the creator's public TikTok content, then submits independent feedback about the content, clarity, pacing, accessibility or creative presentation.
+6. An administrator reviews each response. Approved responses credit the participant's wallet, and the creator can read the approved feedback on their campaign order.
+7. Campaigns complete automatically after the requested number of responses has been approved. Eligible cancellations before any approved responses refund the creator's coin cost.
 
 ## Current feature set
 
-- **Account access:** email/password registration and sign-in, bcrypt password hashes, signed user tokens, and server-side account lookups.
-- **Task rewards:** task catalogue, public TikTok URL validation, feedback submissions, one submission per task at a time, manual review, rejection notes, and rewards credited only after approval.
-- **Virtual wallet:** integer coin balances, an auditable credit/debit ledger, idempotency keys, and transaction history.
-- **PayPal top-ups:** fixed server-priced coin packages, REST checkout-order creation, authenticated capture requests, exact currency/amount/reference validation, and transactional one-time coin credit.
-- **Campaign marketplace:** discovery spotlight, human-audience feedback, and creative review packages; campaign orders debit the wallet inside a database transaction.
-- **Admin console:** open /admin.html; administrators can review task submissions and move campaign orders through the manual workflow. Cancelling a campaign refunds its coin cost to the member wallet.
-- **Baseline protections:** Helmet headers, API rate limiting, Zod request validation, environment-based secrets, HTTPS-only TikTok link validation, parameterized database queries, and automated domain tests.
-- **Responsive web interface:** task cards, wallet summary, PayPal coin packages, campaign marketplace, and order history for desktop and mobile.
+- **Accounts:** email/password registration, sign-in, bcrypt password hashes, signed access tokens, and account-scoped data.
+- **Wallet:** integer virtual-coin balance, transaction history, server-side credits/debits, and unique transaction idempotency keys.
+- **Earn tasks:** public-content feedback tasks; server-validated submissions; administrative review; approved coin rewards only.
+- **Human feedback campaigns:** real members can submit original feedback on a creator's public TikTok content; campaign quantities are tracked; one response per participant per campaign; creators cannot respond to their own campaign.
+- **Rewards from campaigns:** per-response rewards are set by the server, not the browser. Responses are reviewed; coins are credited only after approval. A campaign completes when its requested response count is approved.
+- **Coin shop:** fixed packages at server-defined prices, PayPal REST checkout-order creation, authenticated capture verification, exact purchase-reference/currency/amount validation, and transactional wallet credit.
+- **Campaign management:** coin-paid campaign orders, remaining response counts, approved-response history for creators, admin review queue, completion after approval target, and cancellation/refund guardrails.
+- **Admin console:** open /admin.html to review standalone tasks, genuine campaign feedback, and order statuses.
+- **Baseline protections:** Helmet, API rate limiting, Zod request validation, environment-based secrets, HTTPS TikTok URL checks, parameterized SQL queries, and automated tests.
+- **Responsive interface:** mobile/desktop account dashboard, wallet, task cards, coin packages, campaign marketplace, approved feedback and order history.
+
+The product does **not** use bots, fabricated accounts, fake comments, or any automation to create TikTok metrics. Participants are free to follow or interact with content if they independently want to; no specific off-platform engagement is required to earn task rewards.
 
 ## Requirements
 
 - Node.js 20 or newer
 - PostgreSQL 14 or newer
-- PayPal Developer REST app credentials for coin checkout (start with sandbox credentials)
+- PayPal Developer REST app credentials for coin purchases (start with sandbox credentials)
 
-## Local installation
+## Local setup
 
-1. Copy the sample environment file:
+1. Copy the environment template:
 
        cp .env.example .env
 
-2. Edit .env. Set a unique JWT_SECRET, DATABASE_URL, and PUBLIC_APP_URL. Keep PAYPAL_ENV=sandbox until testing is complete.
-3. Create a PostgreSQL database, then apply the fresh-install schema:
+2. Edit .env. Set a unique JWT_SECRET, DATABASE_URL, and PUBLIC_APP_URL. Keep PAYPAL_ENV=sandbox while testing.
+3. For a fresh database, apply the full schema:
 
        psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
 
-   The schema creates the tables and seeds the starter task catalogue.
+4. For an existing installation, apply the incremental migration:
 
-4. Install dependencies and start the application:
+       psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_rewards_wallet.sql
+
+   The migration creates/updates wallet, task, coin-purchase, campaign-order, and campaign-response tables. Existing databases need the migration before using the new feedback workflow.
+
+5. Install, test and start:
 
        npm install
        npm run check
        npm test
        npm start
 
-5. Open http://localhost:3000.
+6. Open http://localhost:3000.
 
-### Updating an existing database
+## Docker Compose
 
-If the previous Creator Hub Boost schema is already installed, apply the incremental migration rather than recreating tables:
-
-    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_rewards_wallet.sql
-
-The migration is idempotent and seeds or updates the initial task catalogue.
-
-### Docker Compose
-
-After creating .env, run:
+Create .env first, then run:
 
     docker compose up --build
 
-The Compose file starts PostgreSQL and the application, waits for the database health check, and applies db/schema.sql on the first database-volume initialization. If the database volume already exists, apply the migration manually. Change POSTGRES_PASSWORD from the local default before using Compose anywhere beyond local development.
+Compose starts PostgreSQL and the app, waits for the database health check, and applies db/schema.sql on the first database-volume initialization. Existing volumes need the incremental migration. Replace the local default POSTGRES_PASSWORD before using Compose outside local development.
 
 ## Configure administrator access
 
@@ -71,29 +75,29 @@ Generate a bcrypt password hash:
 
     node -e "import('bcryptjs').then(async b => console.log(await b.hash(process.argv[1], 12)))" 'use-a-new-strong-password'
 
-Set the resulting hash in ADMIN_PASSWORD_HASH and the matching email in ADMIN_EMAIL inside the server environment. Do not commit real secrets or use a sample password. Sign in through /admin.html.
+Set the resulting hash in ADMIN_PASSWORD_HASH and the matching email in ADMIN_EMAIL. Do not commit real credentials or use sample passwords. Sign in through /admin.html.
 
 ## Configure PayPal coin purchases
 
 1. Create or select a PayPal Developer REST app and obtain its client ID and secret.
 2. Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the server environment.
-3. Set PAYPAL_ENV=sandbox and use sandbox buyer credentials for testing.
-4. Set PUBLIC_APP_URL to the exact external application origin used for the checkout return URL.
-5. Verify that a successful sandbox purchase credits the expected coin package exactly once before enabling live mode.
+3. Use PAYPAL_ENV=sandbox and sandbox buyer credentials first.
+4. Set PUBLIC_APP_URL to the actual external application origin used by the checkout return URL.
+5. Verify successful sandbox purchases credit the correct package once before enabling live mode.
 
-The coin packages and prices are defined in server/domain.js; price and coin quantities are never accepted from the browser. PayPal capture confirms the exact purchase reference, currency, and amount before a database transaction marks the purchase paid and credits the wallet.
+Coin packages and prices are defined in server/domain.js; the browser cannot set a price or coin quantity. A coin purchase is credited only after PayPal reports a completed capture that matches the saved purchase reference, amount and currency.
 
-## Important product and deployment limitations
+## Important limitations before public launch
 
-- **Coin balances are virtual credits.** They are not cash, are not withdrawable, and have no cash value in this implementation.
-- **Task rewards require review.** The starter tasks request original feedback about public content or profiles; users cannot credit their own wallets by changing browser data.
-- **External campaign fulfilment is not connected.** Paid-in-coins campaign requests are recorded as queued_for_review; the admin workflow is manual. The UI does not claim that external engagement has been delivered.
-- **No email verification or password-reset delivery is configured.** Add a transactional email provider and account-recovery workflow before public launch.
-- **PayPal webhooks and payment-refund processing are not configured.** The starter confirms coin purchases when the member returns from checkout. Configure verified webhooks, dispute handling, and a monitored reconciliation workflow before production use.
-- **No automated follower/like exchange is implemented.** Do not add paid follow-for-follow, fake likes, bots, or artificial engagement guarantees. Review TikTok's current terms and platform policies before connecting any external fulfilment service.
-- Before real users or payments, complete database backups, HTTPS, production secret management, security review, accessibility/device testing, privacy/terms/refund pages, retention rules, support procedures, and applicable legal/age/jurisdiction review.
+- **Virtual coins are not cash.** They cannot be withdrawn and are not cash-equivalent in this implementation.
+- **Task rewards need human review.** This starter includes an administrator review queue but does not yet automate quality scoring or abuse detection.
+- **Genuine feedback is not a promised TikTok metric.** A campaign provides a route to real human review and independent discovery; it does not guarantee follows, likes, comments, views, or recommendation placement. A human click can still be artificially incentivized if the reward depends on a follow/like, so reward conditions must remain about the feedback or platform's own promotion activity, not the TikTok metric.
+- **Campaign responses are manually reviewed.** The app supplies the task board and response flow, but the admin must review responses. It does not automatically prove a participant watched a video for a specific duration.
+- **Email verification and password reset are not configured.** Add a transactional email provider and safe recovery flow before public launch.
+- **PayPal webhooks, disputes and payment refunds are not configured.** The starter capture flow verifies payments when the user returns from PayPal. Configure verified webhooks and reconciliation before production.
+- Before public users or live payments, complete PostgreSQL integration tests, HTTPS, production secret management, database backups, accessibility/device testing, privacy/terms/refund pages, data-retention rules, support procedures, relevant legal/age/jurisdiction review, and a security audit.
 
-Production requires a real JWT_SECRET with at least 32 characters. The server refuses to start in production if the secret is missing, too short, or still uses the sample placeholder.
+Production requires a real JWT_SECRET with at least 32 characters. The application refuses to start in production if the secret is missing, too short, or still the sample placeholder.
 
 ## API outline
 
@@ -112,21 +116,25 @@ Production requires a real JWT_SECRET with at least 32 characters. The server re
 ### Tasks and campaigns (Bearer user token)
 - GET /api/tasks
 - POST /api/tasks/:taskId/submissions
-- POST /api/coins/create-order
-- POST /api/coins/capture-order
+- GET /api/available-feedback
 - POST /api/campaign-orders
 - GET /api/campaign-orders
+- POST /api/campaign-orders/:id/responses
+- POST /api/coins/create-order
+- POST /api/coins/capture-order
 
 ### Admin (Bearer administrator token)
 - POST /api/admin/login
 - GET /api/admin/task-submissions?status=pending
 - PATCH /api/admin/task-submissions/:id
+- GET /api/admin/campaign-responses?status=pending
+- PATCH /api/admin/campaign-responses/:id
 - GET /api/admin/campaign-orders?status=all
 - PATCH /api/admin/campaign-orders/:id
 
 ## Validation
 
-- npm test runs the Node.js test suite for catalogue integrity, server-side package validation, task/campaign validation, TikTok URL validation, and PayPal environment selection.
-- npm run check checks JavaScript syntax for the backend, domain module, user UI, and admin UI.
-- GitHub Actions runs the tests and syntax checks on pushes and pull requests.
-- These checks do not replace tests against a live PostgreSQL instance, real PayPal sandbox credentials, browser/device end-to-end testing, or a professional security review.
+- npm test checks catalogue integrity, coin and response reward terms, task/campaign validation, TikTok URL validation, and PayPal environment selection.
+- npm run check syntax-checks the backend, domain logic, member UI and admin UI.
+- GitHub Actions runs tests and syntax checks on pushes and pull requests.
+- A green unit/syntax run is not a substitute for live database integration tests, PayPal sandbox testing, browser/device testing, or a professional security review.
