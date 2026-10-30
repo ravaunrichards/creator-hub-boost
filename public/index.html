@@ -11,11 +11,12 @@
 <body>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Creator Hub Boost home"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a>
-    <nav><a href="#quickBuilder">Services</a><a href="#wallet">Buy coins</a><a href="#orders">Track orders</a><a href="#account">Account</a></nav>
+    <nav><a href="#quickBuilder">Services</a><a href="#wallet">Buy coins</a><a href="/orders.html">Track an order</a><a href="#account">Sign in</a></nav>
     <a class="top-cta" href="#account" id="authNav">Sign in <span>↗</span></a>
     <button class="menu-btn" aria-label="Open menu" id="menuBtn">☰</button>
   </header>
 
+  <div class="service-order-notice" id="serviceOrderNotice" hidden role="status"></div>
   <main id="top">
     <section class="hero">
       <div class="hero-glow glow-one"></div><div class="hero-glow glow-two"></div>
@@ -40,46 +41,54 @@
         <div class="builder-intro">
           <div class="eyebrow dark-eyebrow"><span class="pulse builder-pulse"></span> CREATOR SERVICES</div>
           <h2>Your content.<br><span>Your next move.</span></h2>
-          <p>Choose a real-human feedback service, preview the package, and submit a campaign for review. You never need to share your TikTok password.</p>
-          <div class="builder-promise"><span>✓</span><div><b>Clear package before checkout</b><small>Service details and coin cost are shown before you submit.</small></div></div>
+          <p>Choose a professional profile review, video critique, or practical content plan. Add your email and pay securely. No Creator Hub Boost account is required for service orders.</p>
+          <div class="builder-promise"><span>✓</span><div><b>No social password required</b><small>Only a public TikTok profile or video link is used for your review.</small></div></div>
         </div>
         <div class="builder-card">
-          <div class="builder-steps" aria-label="Campaign steps">
+          <div class="builder-steps" aria-label="Order steps">
             <div class="builder-step active"><span>01</span><b>Choose & preview</b></div>
-            <div class="builder-step"><span>02</span><b>Account</b></div>
-            <div class="builder-step"><span>03</span><b>Submit campaign</b></div>
+            <div class="builder-step"><span>02</span><b>Email</b></div>
+            <div class="builder-step"><span>03</span><b>Payment</b></div>
           </div>
           <form id="builderForm">
             <fieldset class="builder-service-field">
               <legend>01 · Choose a service</legend>
               <div class="builder-tabs" id="builderTabs" role="group" aria-label="Creator service">
-                <button type="button" class="builder-tab active" data-builder-campaign="video-feedback-panel"><span>▶</span><b>Video feedback</b></button>
-                <button type="button" class="builder-tab" data-builder-campaign="profile-review"><span>◎</span><b>Profile review</b></button>
-                <button type="button" class="builder-tab" data-builder-campaign="caption-review"><span>✎</span><b>Caption review</b></button>
-                <button type="button" class="builder-tab" data-builder-campaign="accessibility-review"><span>◉</span><b>Accessibility</b></button>
+                <button type="button" class="builder-tab active" data-builder-service="profile-review" aria-pressed="true"><span>◎</span><b>Profile review</b></button>
+                <button type="button" class="builder-tab" data-builder-service="video-review" aria-pressed="false"><span>▶</span><b>Video review</b></button>
+                <button type="button" class="builder-tab" data-builder-service="growth-plan" aria-pressed="false"><span>↗</span><b>Growth plan</b></button>
+                <button type="button" class="builder-tab" data-builder-service="content-readiness" aria-pressed="false"><span>✦</span><b>Content review</b></button>
               </div>
             </fieldset>
             <label class="builder-url-label" for="builderTargetUrl">02 · Your public TikTok profile or video
               <input id="builderTargetUrl" type="url" placeholder="https://www.tiktok.com/@yourname" maxlength="500" autocomplete="url" required>
             </label>
-            <div class="builder-package-heading"><span>03 · Choose a response package</span><span>Paid with coins</span></div>
+            <button type="button" class="builder-preview-link" id="previewTikTokButton">Preview public TikTok link ↗</button>
+            <div class="builder-package-heading"><span>03 · Choose your package</span><span>Secure PayPal checkout</span></div>
             <div id="builderPackages" class="builder-packages"><div class="loading-card">Loading service packages…</div></div>
-            <div class="builder-submit-row"><button class="button primary" id="builderReviewButton" type="submit">Review my campaign <span>→</span></button><small>No order is placed by previewing.</small></div>
+            <div class="builder-submit-row"><button class="button primary" id="builderReviewButton" type="submit">Review my order <span>→</span></button><small>No account needed · Review everything before you pay.</small></div>
             <p id="builderMessage" class="form-message" aria-live="polite"></p>
           </form>
         </div>
         <aside class="builder-preview" id="builderPreview" aria-live="polite">
-          <div class="preview-topline"><span class="preview-live-dot"></span> CAMPAIGN PREVIEW <span class="preview-label">PREVIEW</span></div>
+          <div class="preview-topline"><span class="preview-live-dot"></span> ORDER PREVIEW <span class="preview-label">PREVIEW</span></div>
           <div class="preview-profile-mark">✦</div><p class="preview-overline">YOUR SELECTED SERVICE</p>
-          <h3 id="builderPreviewTitle">Genuine video feedback</h3>
-          <p id="builderPreviewDescription">Receive independent opinions from real participants about your public content.</p>
-          <div class="preview-metrics"><div><small>Feedback responses</small><strong id="builderPreviewCount">5</strong></div><div><small>Package cost</small><strong><span id="builderPreviewCost">250</span> <em>coins</em></strong></div></div>
-          <div class="preview-link-row"><span>↗</span><div><b id="builderPreviewTarget">Your profile will appear here.</b><small>Preview only · does not alter TikTok</small></div></div>
-          <p class="preview-disclaimer">Package quantities describe requested human feedback responses, not guaranteed followers, likes, views, shares, or other TikTok metrics.</p>
+          <h3 id="builderPreviewTitle">Creator profile review</h3>
+          <p id="builderPreviewDescription">A practical audit of profile clarity and presentation.</p>
+          <div class="preview-metrics"><div><small>Package units</small><strong id="builderPreviewCount">1</strong></div><div><small>Order total</small><strong id="builderPreviewCost">$4.99</strong></div></div>
+          <div class="preview-link-row"><span>↗</span><div><b id="builderPreviewTarget">Your public link will appear here.</b><small>Preview only · does not change your TikTok account</small></div></div>
+          <p class="preview-disclaimer" id="builderPreviewDeliverable">Your selected written review will be prepared after payment and handled through the order queue.</p>
         </aside>
       </div>
     </section>
-
+    <section class="how-section" aria-labelledby="howTitle">
+      <div class="how-heading"><div class="eyebrow dark-eyebrow">THREE SIMPLE STEPS</div><h2 id="howTitle">From choosing to tracking.</h2><p>See the service, confirm the checkout email, and follow the real order status.</p></div>
+      <div class="how-grid">
+        <article class="how-card"><span>01</span><h3>Choose & preview</h3><p>Select a service and package. Preview the price and actual deliverable before placing the order.</p></article>
+        <article class="how-card"><span>02</span><h3>Email & payment</h3><p>Enter an email address and complete secure PayPal checkout. No account is required.</p></article>
+        <article class="how-card"><span>03</span><h3>Track progress</h3><p>Use the private tracking link after payment to view the order status and completed review notes.</p></article>
+      </div>
+    </section>
     <section class="trust-strip">
       <div><span class="trust-icon">🪙</span><p><b>Earn coins</b><small>Submit tasks for review</small></p></div>
       <div><span class="trust-icon">◎</span><p><b>Pay with PayPal</b><small>Fixed coin packages</small></p></div>
@@ -139,11 +148,26 @@
       <div class="track-decoration">CH<span>+</span></div><div class="track-copy"><div class="eyebrow">YOUR CAMPAIGNS, YOUR VIEW</div><h2>Track your campaign orders.</h2><p>Sign in to review campaign packages, coin costs, and the latest status.</p><div id="orderList" class="order-list"><p class="muted">Sign in to view your orders.</p></div></div>
     </section>
 
-    <section class="notice-section"><span class="notice-icon">i</span><div><b>Built for transparent, responsible promotion</b><p>Only submit content you own or are authorized to promote. Creator Hub Boost does not request social account passwords and does not support bots, fake activity, or exchange-for-follow schemes. Paid campaigns in this starter are recorded for review; an external fulfilment provider is not yet connected.</p></div></section>
+    <section class="notice-section"><span class="notice-icon">i</span><div><b>Independent creator services</b><p>Creator Hub Boost provides profile reviews, video critiques, and practical content planning. We do not sell or automate followers, likes, views, shares, or other artificial engagement. Creator Hub Boost is independent and is not affiliated with TikTok.</p></div></section>
   </main>
 
-  <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a><p>Earn coins. Support creators. Grow responsibly.</p><div><a href="#tasks">Tasks</a><a href="#wallet">Coin shop</a><a href="#campaigns">Campaigns</a><a href="/admin.html">Admin</a></div><small>© <span id="year"></span> Creator Hub Boost. All rights reserved.</small></footer>
+  <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a><p>Earn coins. Support creators. Grow responsibly.</p><div><a href="#quickBuilder">Services</a><a href="#wallet">Buy coins</a><a href="/orders.html">Track an order</a><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/admin.html">Admin</a></div><small>© <span id="year"></span> Creator Hub Boost. All rights reserved.</small></footer>
 
+  <div class="modal-backdrop" id="serviceOrderModal" hidden>
+    <section class="order-modal guest-order-modal" role="dialog" aria-modal="true" aria-labelledby="serviceOrderTitle">
+      <button class="modal-close" id="closeServiceOrderModal" aria-label="Close">×</button>
+      <div class="eyebrow dark-eyebrow">STEP 02 · EMAIL & PAYMENT</div><h2 id="serviceOrderTitle">Where should we send your order link?</h2>
+      <p class="modal-subtitle">No account needed. Use an email address you can access.</p>
+      <div class="guest-order-summary" id="serviceOrderSummary"></div>
+      <form id="serviceOrderForm">
+        <label>Email address<input id="serviceOrderEmail" name="email" type="email" required maxlength="254" autocomplete="email" placeholder="you@example.com"></label>
+        <div class="checkout-steps-inline"><span class="complete">✓ Choose & preview</span><span class="active">02 Email</span><span>03 PayPal</span></div>
+        <button class="button primary full-button" id="serviceCheckoutButton" type="submit">Continue to PayPal →</button>
+        <p class="small-note">You will be redirected to PayPal to approve payment. Your order is not paid until PayPal confirms it.</p>
+        <div id="serviceOrderMessage" class="form-message" aria-live="polite"></div>
+      </form>
+    </section>
+  </div>
   <div class="modal-backdrop" id="campaignModal" hidden>
     <section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="campaignModalTitle">
       <button class="modal-close" id="closeCampaignModal" aria-label="Close">×</button><div class="eyebrow dark-eyebrow">CAMPAIGN REQUEST</div><h2 id="campaignModalTitle">Confirm your campaign</h2><p class="modal-subtitle" id="campaignModalSubtitle"></p>

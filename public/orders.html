@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101226">
+  <meta name="description" content="Track your Creator Hub Boost service order securely.">
+  <title>Track an order · Creator Hub Boost</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="orders-page">
+  <header class="topbar orders-topbar">
+    <a class="brand" href="/"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a>
+    <nav><a href="/#quickBuilder">Services</a><a href="/#wallet">Buy coins</a><a href="/#account">Sign in</a></nav>
+    <a class="top-cta" href="/#quickBuilder">Back to services ↗</a>
+  </header>
+  <main class="orders-main">
+    <section class="orders-hero">
+      <div class="eyebrow dark-eyebrow">PRIVATE ORDER TRACKING</div>
+      <h1>Your order,<br><span>one link away.</span></h1>
+      <p>Open the private tracking link from your confirmation email, or request a fresh link using the order reference and checkout email.</p>
+    </section>
+    <section class="tracking-card">
+      <div class="tracking-card-heading"><span class="tracking-icon">↗</span><div><h2>Find your order</h2><p>We’ll email a fresh private tracking link to the checkout address.</p></div></div>
+      <form id="trackingRequestForm">
+        <label>Order reference<input id="trackingReference" type="text" inputmode="text" autocomplete="off" placeholder="Paste your order reference" required></label>
+        <label>Your checkout email<input id="trackingEmail" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+        <button class="button primary full-button" id="trackingSubmit" type="submit">Email my tracking link →</button>
+        <p class="form-message" id="trackingMessage" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section class="tracking-result" id="trackingResult" hidden aria-live="polite">
+      <div class="tracking-result-top"><div><div class="eyebrow dark-eyebrow">ORDER STATUS</div><h2 id="trackingService">Your service order</h2></div><span class="status-pill" id="trackingStatus">Loading</span></div>
+      <div class="tracking-meta"><div><small>Order reference</small><b id="trackingOrderRef"></b></div><div><small>Package</small><b id="trackingPackage"></b></div><div><small>Total paid</small><b id="trackingAmount"></b></div><div><small>Submitted</small><b id="trackingCreated"></b></div></div>
+      <div class="tracking-timeline" id="trackingTimeline"></div>
+      <div class="tracking-notes" id="trackingNotes" hidden><h3>Completed review / latest update</h3><p id="trackingNotesText"></p></div>
+      <a href="/#quickBuilder" class="button outline-button">Order another service</a>
+    </section>
+    <section class="tracking-help"><b>Keep your tracking link private.</b><p>Anyone with that link can view the order and its completed report. Creator Hub Boost will never ask for your TikTok password.</p></section>
+  </main>
+  <footer><a class="brand footer-brand" href="/"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a><p>Independent creator services. Not affiliated with TikTok.</p><div><a href="/terms.html">Terms</a><a href="/privacy.html">Privacy</a><a href="/#quickBuilder">Services</a></div><small>© <span id="year"></span> Creator Hub Boost. All rights reserved.</small></footer>
+  <script src="/orders.js" defer></script>
+</body>
+</html>

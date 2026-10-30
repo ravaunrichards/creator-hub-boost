@@ -117,9 +117,47 @@ async function processVerifiedEvent(pool, event) {
     );
     const purchase = purchaseResult.rows[0];
     if (!purchase) {
-      await recordIgnored(client, event, capture.captureId, 'No local coin purchase matched the PayPal order ID.');
+      // Guest service orders use PayPal too, but never credit a member coin wallet.
+      const serviceOrderResult = await client.query(
+        'SELECT id,amount,currency,status,paypal_capture_id FROM orders WHERE paypal_order_id=$1 FOR UPDATE',
+        [capture.orderId]
+      );
+      const serviceOrder = serviceOrderResult.rows[0];
+      if (!serviceOrder) {
+        await recordIgnored(client, event, capture.captureId, 'No local coin purchase or guest service order matched the PayPal order ID.');
+        await client.query('COMMIT');
+        return { duplicate: false, status: 'ignored' };
+      }
+      if (['under_review','in_progress','completed'].includes(serviceOrder.status)) {
+        if (serviceOrder.paypal_capture_id === capture.captureId) {
+          await client.query(
+            "UPDATE paypal_webhook_events SET processing_status='processed',error_message=NULL,processed_at=NOW() WHERE event_id=$1",
+            [event.id]
+          );
+          await client.query('COMMIT');
+          return { duplicate: false, status: 'service_order_already_confirmed' };
+        }
+        await recordIgnored(client, event, capture.captureId, 'Guest service order was already paid with a different capture ID.');
+        await client.query('COMMIT');
+        return { duplicate: false, status: 'ignored' };
+      }
+      const amountMatches = cents(serviceOrder.amount) === cents(capture.amount);
+      const currencyMatches = String(serviceOrder.currency || '').trim().toUpperCase() === capture.currency;
+      if (serviceOrder.status !== 'awaiting_payment' || !amountMatches || !currencyMatches) {
+        await recordIgnored(client, event, capture.captureId, 'Guest service order was not awaiting payment or amount/currency did not match.');
+        await client.query('COMMIT');
+        return { duplicate: false, status: 'ignored' };
+      }
+      await client.query(
+        "UPDATE orders SET status='under_review',paypal_capture_id=$2,paid_at=NOW() WHERE id=$1",
+        [serviceOrder.id, capture.captureId]
+      );
+      await client.query(
+        "UPDATE paypal_webhook_events SET processing_status='processed',error_message=NULL,processed_at=NOW() WHERE event_id=$1",
+        [event.id]
+      );
       await client.query('COMMIT');
-      return { duplicate: false, status: 'ignored' };
+      return { duplicate: false, status: 'service_order_confirmed' };
     }
 
     if (purchase.status === 'paid') {

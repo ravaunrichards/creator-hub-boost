@@ -22,14 +22,16 @@ async function loadAdminQueues() {
   $('#submissionQueue').innerHTML = '<p class="muted">Loading task submissions…</p>';
   $('#campaignQueue').innerHTML = '<p class="muted">Loading campaign orders…</p>';
   try {
-    const [taskData, responseData, campaignData] = await Promise.all([
+    const [taskData, responseData, campaignData, serviceData] = await Promise.all([
       adminApi('/api/admin/task-submissions?status=pending'),
       adminApi('/api/admin/campaign-responses?status=pending'),
-      adminApi('/api/admin/campaign-orders?status=all')
+      adminApi('/api/admin/campaign-orders?status=all'),
+      adminApi('/api/service-orders/admin/service-orders?status=all')
     ]);
     renderSubmissions(taskData.submissions || []);
     renderCampaignResponses(responseData.responses || []);
     renderCampaignOrders(campaignData.orders || []);
+    renderServiceOrders(serviceData.orders || []);
   } catch (error) {
     $('#adminMessage').textContent = error.message;
   }
@@ -51,6 +53,20 @@ function renderCampaignResponses(items) {
     <label>Review note (optional)<textarea data-campaign-response-note="${escapeHtml(item.id)}" rows="2" maxlength="500" placeholder="Explain the decision or ask for a more specific review…"></textarea></label>
     <div class="admin-record-actions"><button class="button primary" data-review-campaign-response="${escapeHtml(item.id)}" data-review-status="approved">Approve & credit coins</button><button class="button danger-button" data-review-campaign-response="${escapeHtml(item.id)}" data-review-status="rejected">Reject response</button></div>
   </article>`).join('');
+}
+
+function renderServiceOrders(items) {
+  const root = $('#serviceOrderQueue');
+  if (!items.length) { root.innerHTML = '<div class="admin-empty">No paid guest service orders are waiting.</div>'; return; }
+  root.innerHTML = items.map(order => {
+    const terminal = ['completed','cancelled'].includes(order.status);
+    return `<article class="admin-record campaign-record">
+      <div class="admin-record-top"><div><span class="admin-record-type">${escapeHtml(order.service)} · ${escapeHtml(order.package)}</span><h3>${escapeHtml(order.currency)} ${Number(order.amount).toFixed(2)} · ${escapeHtml(order.status.replaceAll('_',' '))}</h3><p>${escapeHtml(order.email)} · ${escapeHtml(new Date(order.createdAt).toLocaleString())}</p><a class="admin-link" href="${escapeHtml(order.targetUrl)}" target="_blank" rel="noopener noreferrer">Open customer TikTok link ↗</a><p class="admin-url">Order ref: ${escapeHtml(order.reference)}</p></div><span class="status-pill status-${escapeHtml(order.status)}">${escapeHtml(order.status.replaceAll('_',' '))}</span></div>
+      ${order.fulfilmentNotes ? `<blockquote>${escapeHtml(order.fulfilmentNotes)}</blockquote>` : ''}
+      ${terminal ? '' : `<label>Actual fulfilment notes / report<textarea data-service-note="${escapeHtml(order.reference)}" rows="3" maxlength="5000" placeholder="Write the actual review results and recommendations. These notes become visible on the customer's private tracking page.">${escapeHtml(order.fulfilmentNotes || '')}</textarea></label>
+      <div class="admin-record-actions">${order.status === 'under_review' ? `<button class="button outline-button" data-service-status="${escapeHtml(order.reference)}" data-status="in_progress">Start work</button>` : ''}<button class="button primary" data-service-status="${escapeHtml(order.reference)}" data-status="completed">Mark completed</button><button class="button danger-button" data-service-status="${escapeHtml(order.reference)}" data-status="cancelled">Cancel order</button></div>`}
+    </article>`;
+  }).join('');
 }
 
 function renderCampaignOrders(items) {
@@ -129,6 +145,30 @@ $('#campaignResponseQueue').addEventListener('click', async (event) => {
     button.disabled = false;
   }
 });
+$('#serviceOrderQueue').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-service-status]');
+  if (!button) return;
+  const orderRef = button.dataset.serviceStatus;
+  const status = button.dataset.status;
+  const note = document.querySelector(`[data-service-note="${CSS.escape(orderRef)}"]`)?.value || '';
+  if (status === 'completed' && note.trim().length < 20) {
+    $('#adminMessage').textContent = 'Add the actual completed review notes (at least 20 characters) before closing this order.';
+    return;
+  }
+  if (status === 'cancelled' && !window.confirm('Cancel this paid guest service order? Only do this after handling the refund with the payment provider.')) return;
+  button.disabled = true;
+  try {
+    await adminApi(`/api/service-orders/admin/service-orders/${encodeURIComponent(orderRef)}`, {
+      method: 'PATCH', body: JSON.stringify({ status, fulfilmentNotes: note })
+    });
+    $('#adminMessage').textContent = `Guest service order updated to ${status.replaceAll('_',' ')}.`;
+    await loadAdminQueues();
+  } catch (error) {
+    $('#adminMessage').textContent = error.message;
+    button.disabled = false;
+  }
+});
+
 $('#campaignQueue').addEventListener('click', async (event) => {
   const button = event.target.closest('[data-campaign-status]');
   if (!button) return;

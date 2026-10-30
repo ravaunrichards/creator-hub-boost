@@ -16,10 +16,15 @@ CREATE TABLE IF NOT EXISTS orders (
   paypal_order_id TEXT UNIQUE,
   paypal_capture_id TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  paid_at TIMESTAMPTZ
+  paid_at TIMESTAMPTZ,
+  tracking_token_hash TEXT,
+  tracking_token_expires_at TIMESTAMPTZ,
+  fulfilment_notes TEXT,
+  completed_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders (created_at DESC);
 CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status);
+CREATE INDEX IF NOT EXISTS orders_email_created_idx ON orders (LOWER(email),created_at DESC);
 
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

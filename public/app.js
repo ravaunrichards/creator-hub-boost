@@ -1,5 +1,5 @@
 const $ = (selector) => document.querySelector(selector);
-const state = { token: sessionStorage.getItem('chb-access-token') || '', user: null, balance: 0, tasks: [], feedbackTasks: [], coinPackages: [], campaigns: [], activeCampaign: null, builderCampaignId: 'video-feedback-panel', builderPackageId: 'feedback-5' };
+const state = { token: sessionStorage.getItem('chb-access-token') || '', user: null, balance: 0, tasks: [], feedbackTasks: [], coinPackages: [], campaigns: [], serviceCatalog: [], activeCampaign: null, activeServiceOrder: null, builderServiceId: 'profile-review', builderPackageId: 'profile-quick' };
 const money = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
 const number = (value) => new Intl.NumberFormat('en-US').format(Number(value || 0));
 function escapeHtml(value) {
@@ -84,15 +84,21 @@ async function loadAccount() {
 }
 async function loadCatalogue() {
   try {
-    const data = await api('/api/catalogue');
-    state.coinPackages = data.coinPackages || [];
-    state.campaigns = data.campaigns || [];
+    const [catalogue, serviceData] = await Promise.all([
+      api('/api/catalogue'),
+      api('/api/service-orders/catalogue')
+    ]);
+    state.coinPackages = catalogue.coinPackages || [];
+    state.campaigns = catalogue.campaigns || [];
+    state.serviceCatalog = serviceData.services || [];
     renderCoinPackages();
     renderCampaigns();
-    renderBuilder();
+    renderServiceBuilder();
   } catch (error) {
     $('#coinGrid').innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
     $('#campaignGrid').innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
+    $('#builderPackages').innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
+    $('#builderMessage').textContent = error.message;
   }
 }
 async function loadTasks() {
@@ -197,57 +203,53 @@ function renderCampaigns() {
     <div class="campaign-packages">${campaign.packages.map(pack => `<div class="campaign-package"><div><b>${escapeHtml(pack.label)}</b><small>${escapeHtml(pack.detail)}</small><small>${number(pack.responseCount)} response(s) · ${number(pack.rewardCoinsPerResponse)} coins per approved response</small></div><strong>${number(pack.coins)} 🪙</strong><button class="button outline-button" data-campaign="${escapeHtml(campaign.id)}" data-package="${escapeHtml(pack.id)}">Select</button></div>`).join('')}</div>
   </article>`).join('');
 }
-function renderBuilder() {
+function renderServiceBuilder() {
   const grid = $('#builderPackages');
   if (!grid) return;
-  if (!state.campaigns.length) {
-    grid.innerHTML = '<div class="loading-card">Service packages are unavailable right now.</div>';
+  if (!state.serviceCatalog.length) {
+    grid.innerHTML = '<div class="loading-card">No service packages are available right now.</div>';
     return;
   }
-  let campaign = state.campaigns.find(item => item.id === state.builderCampaignId);
-  if (!campaign) campaign = state.campaigns[0];
-  state.builderCampaignId = campaign.id;
-  let pack = campaign.packages.find(item => item.id === state.builderPackageId);
-  if (!pack) pack = campaign.packages[0];
+  let service = state.serviceCatalog.find(item => item.id === state.builderServiceId);
+  if (!service) service = state.serviceCatalog[0];
+  state.builderServiceId = service.id;
+  let pack = service.packages.find(item => item.id === state.builderPackageId);
+  if (!pack) pack = service.packages[0];
   state.builderPackageId = pack.id;
-  document.querySelectorAll('[data-builder-campaign]').forEach(button => {
-    const active = button.dataset.builderCampaign === campaign.id;
+  document.querySelectorAll('[data-builder-service]').forEach(button => {
+    const active = button.dataset.builderService === service.id;
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
-    button.disabled = !state.campaigns.some(item => item.id === button.dataset.builderCampaign);
+    button.disabled = !state.serviceCatalog.some(item => item.id === button.dataset.builderService);
   });
-  grid.innerHTML = campaign.packages.map(option => `<button type="button" class="builder-package-card ${option.id === pack.id ? 'active' : ''}" data-builder-package="${escapeHtml(option.id)}" aria-pressed="${option.id === pack.id}">
+  grid.innerHTML = service.packages.map(option => `<button type="button" class="builder-package-card ${option.id === pack.id ? 'active' : ''}" data-builder-package="${escapeHtml(option.id)}" aria-pressed="${option.id === pack.id}">
     <span class="builder-package-radio" aria-hidden="true"></span>
-    <span class="builder-package-copy"><b>${escapeHtml(option.label)}</b><small>${escapeHtml(option.detail)}</small></span>
-    <span class="builder-package-price"><b>${number(option.coins)}</b><small>coins</small></span>
+    <span class="builder-package-copy"><b>${escapeHtml(option.label)}</b><small>${escapeHtml(option.deliverable)}</small></span>
+    <span class="builder-package-price"><b>${money(option.price)}</b><small>${escapeHtml(option.currency)}</small></span>
   </button>`).join('');
-  $('#builderPreviewTitle').textContent = campaign.name;
-  $('#builderPreviewDescription').textContent = campaign.description;
-  $('#builderPreviewCount').textContent = number(pack.responseCount);
-  $('#builderPreviewCost').textContent = number(pack.coins);
+  $('#builderPreviewTitle').textContent = service.name;
+  $('#builderPreviewDescription').textContent = service.description;
+  $('#builderPreviewCount').textContent = number(pack.quantity);
+  $('#builderPreviewCost').textContent = money(pack.price);
+  $('#builderPreviewDeliverable').textContent = pack.deliverable;
   const target = $('#builderTargetUrl').value.trim();
-  $('#builderPreviewTarget').textContent = target || 'Your profile will appear here.';
+  $('#builderPreviewTarget').textContent = target || 'Your public link will appear here.';
   $('#builderMessage').textContent = '';
 }
-function showActiveCampaignModal() {
-  if (!state.activeCampaign) return;
-  const { campaign, pack, targetUrl = '' } = state.activeCampaign;
+function openCampaign(campaignId, packageId) {
+  if (!requireSignIn()) return;
+  const campaign = state.campaigns.find(item => item.id === campaignId);
+  const pack = campaign?.packages.find(item => item.id === packageId);
+  if (!campaign || !pack) return;
+  state.activeCampaign = { campaign, pack };
   $('#campaignModalTitle').textContent = campaign.name;
   $('#campaignModalSubtitle').textContent = `${pack.label} — ${pack.detail}`;
   $('#campaignCost').textContent = `${number(pack.coins)} coins`;
   $('#campaignMessage').textContent = '';
-  $('#campaignTargetUrl').value = targetUrl;
+  $('#campaignTargetUrl').value = '';
   $('#campaignPolicyAccepted').checked = false;
   $('#campaignModal').hidden = false;
   document.body.style.overflow = 'hidden';
-}
-function openCampaign(campaignId, packageId, targetUrl = '') {
-  const campaign = state.campaigns.find(item => item.id === campaignId);
-  const pack = campaign?.packages.find(item => item.id === packageId);
-  if (!campaign || !pack) return;
-  state.activeCampaign = { campaign, pack, targetUrl };
-  if (!requireSignIn()) return;
-  showActiveCampaignModal();
 }
 function closeCampaign() { $('#campaignModal').hidden = true; document.body.style.overflow = ''; }
 function validateBuilderTarget(value) {
@@ -259,6 +261,34 @@ function validateBuilderTarget(value) {
     throw new Error('Use an HTTPS public profile or video URL hosted on tiktok.com.');
   }
   return parsed.href;
+}
+function openGuestOrderModal(service, pack, targetUrl) {
+  state.activeServiceOrder = { service, pack, targetUrl };
+  $('#serviceOrderSummary').innerHTML = `<div class="guest-summary-row"><span>${escapeHtml(service.name)}</span><b>${escapeHtml(pack.label)}</b></div><p>${escapeHtml(pack.deliverable)}</p><div class="guest-summary-total"><span>Total</span><strong>${money(pack.price)} ${escapeHtml(pack.currency)}</strong></div>`;
+  $('#serviceOrderMessage').textContent = '';
+  $('#serviceOrderModal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('#serviceOrderEmail').focus();
+}
+function closeGuestOrderModal() {
+  $('#serviceOrderModal').hidden = true;
+  document.body.style.overflow = '';
+}
+function showServicePaymentNotice(data) {
+  const notice = $('#serviceOrderNotice');
+  notice.replaceChildren();
+  const heading = document.createElement('strong');
+  heading.textContent = 'Payment confirmed — your order is in the review queue.';
+  const detail = document.createElement('p');
+  detail.textContent = data.message || 'Save this private tracking link to follow your order.';
+  const link = document.createElement('a');
+  link.href = data.trackingUrl;
+  link.textContent = 'Open private order tracking →';
+  link.className = 'button primary';
+  link.rel = 'noopener';
+  notice.append(heading, detail, link);
+  notice.hidden = false;
+  notice.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 async function buyCoins(packageId, button) {
   if (!requireSignIn()) return;
@@ -306,33 +336,72 @@ $('#authForm').addEventListener('submit', async (event) => {
   }
 });
 $('#builderTabs').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-builder-campaign]');
-  if (!button || !state.campaigns.some(item => item.id === button.dataset.builderCampaign)) return;
-  state.builderCampaignId = button.dataset.builderCampaign;
-  state.builderPackageId = state.campaigns.find(item => item.id === state.builderCampaignId)?.packages[0]?.id || '';
-  renderBuilder();
+  const button = event.target.closest('[data-builder-service]');
+  if (!button || !state.serviceCatalog.some(item => item.id === button.dataset.builderService)) return;
+  state.builderServiceId = button.dataset.builderService;
+  state.builderPackageId = state.serviceCatalog.find(item => item.id === state.builderServiceId)?.packages[0]?.id || '';
+  renderServiceBuilder();
 });
 $('#builderPackages').addEventListener('click', (event) => {
   const button = event.target.closest('[data-builder-package]');
   if (!button) return;
   state.builderPackageId = button.dataset.builderPackage;
-  renderBuilder();
+  renderServiceBuilder();
 });
 $('#builderTargetUrl').addEventListener('input', () => {
   const url = $('#builderTargetUrl').value.trim();
-  $('#builderPreviewTarget').textContent = url || 'Your profile will appear here.';
+  $('#builderPreviewTarget').textContent = url || 'Your public link will appear here.';
+});
+$('#previewTikTokButton').addEventListener('click', () => {
+  try {
+    const url = validateBuilderTarget($('#builderTargetUrl').value);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    $('#builderMessage').textContent = 'Opening your public TikTok link in a new tab.';
+  } catch (error) {
+    $('#builderMessage').textContent = error.message;
+  }
 });
 $('#builderForm').addEventListener('submit', (event) => {
   event.preventDefault();
   try {
     const targetUrl = validateBuilderTarget($('#builderTargetUrl').value);
-    const campaign = state.campaigns.find(item => item.id === state.builderCampaignId);
-    const pack = campaign?.packages.find(item => item.id === state.builderPackageId);
-    if (!campaign || !pack) throw new Error('Select an available service package.');
+    const service = state.serviceCatalog.find(item => item.id === state.builderServiceId);
+    const pack = service?.packages.find(item => item.id === state.builderPackageId);
+    if (!service || !pack) throw new Error('Select an available service package.');
     $('#builderMessage').textContent = '';
-    openCampaign(campaign.id, pack.id, targetUrl);
+    openGuestOrderModal(service, pack, targetUrl);
   } catch (error) {
     $('#builderMessage').textContent = error.message;
+  }
+});
+$('#closeServiceOrderModal').addEventListener('click', closeGuestOrderModal);
+$('#serviceOrderModal').addEventListener('click', event => {
+  if (event.target === $('#serviceOrderModal')) closeGuestOrderModal();
+});
+$('#serviceOrderForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!state.activeServiceOrder) return;
+  const button = $('#serviceCheckoutButton');
+  button.disabled = true;
+  button.textContent = 'Creating secure checkout…';
+  $('#serviceOrderMessage').textContent = '';
+  try {
+    const data = await api('/api/service-orders/create-order', {
+      method: 'POST',
+      body: JSON.stringify({
+        serviceId: state.activeServiceOrder.service.id,
+        packageId: state.activeServiceOrder.pack.id,
+        targetUrl: state.activeServiceOrder.targetUrl,
+        email: $('#serviceOrderEmail').value.trim()
+      })
+    });
+    sessionStorage.setItem(`chb-service-tracking:${data.orderRef}`, data.trackingToken);
+    sessionStorage.setItem('chb-active-service-order', data.orderRef);
+    window.location.assign(data.approveUrl);
+  } catch (error) {
+    $('#serviceOrderMessage').textContent = error.message;
+    button.disabled = false;
+    button.textContent = 'Continue to PayPal →';
   }
 });
 $('#toggleAuthMode').addEventListener('click', () => setAuthMode($('#authForm').dataset.mode === 'register' ? 'login' : 'register'));
@@ -433,6 +502,47 @@ $('#campaignForm').addEventListener('submit', async (event) => {
 });
 async function processPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
+  const serviceMode = params.get('service_payment');
+  if (serviceMode === 'cancel') {
+    const orderRef = params.get('orderRef');
+    const trackingToken = orderRef ? sessionStorage.getItem(`chb-service-tracking:${orderRef}`) : '';
+    if (orderRef && trackingToken) {
+      await api('/api/service-orders/cancel-order', { method: 'POST', body: JSON.stringify({ orderRef, trackingToken }) }).catch(() => {});
+      sessionStorage.removeItem(`chb-service-tracking:${orderRef}`);
+      sessionStorage.removeItem('chb-active-service-order');
+    }
+    history.replaceState({}, '', '/');
+    setNotice('PayPal checkout was cancelled. No service order was paid.');
+    return;
+  }
+  if (serviceMode === 'return') {
+    const orderRef = params.get('orderRef');
+    const paypalOrderId = params.get('token');
+    history.replaceState({}, '', '/');
+    const trackingToken = orderRef ? sessionStorage.getItem(`chb-service-tracking:${orderRef}`) : '';
+    if (!orderRef || !paypalOrderId || !trackingToken) {
+      const notice = $('#serviceOrderNotice');
+      notice.textContent = 'PayPal returned, but this browser no longer has the private order token. Use Track an order to request a new link by email.';
+      notice.hidden = false;
+      return;
+    }
+    setNotice('Verifying your PayPal payment…');
+    try {
+      const data = await api('/api/service-orders/capture-order', {
+        method: 'POST',
+        body: JSON.stringify({ orderRef, paypalOrderId, trackingToken })
+      });
+      sessionStorage.removeItem(`chb-service-tracking:${orderRef}`);
+      sessionStorage.removeItem('chb-active-service-order');
+      showServicePaymentNotice(data);
+    } catch (error) {
+      setNotice(error.message, true);
+      $('#serviceOrderNotice').textContent = error.message + ' Your secure tracking token is kept in this browser so you can retry.';
+      $('#serviceOrderNotice').hidden = false;
+    }
+    return;
+  }
+
   const mode = params.get('payment');
   if (mode === 'cancel') {
     sessionStorage.removeItem('chb-pending-purchase');
@@ -452,7 +562,7 @@ async function processPaymentReturn() {
   const paypalOrderId = sessionStorage.getItem('chb-pending-paypal-order');
   if (!purchaseId || !paypalOrderId) return;
   if (!state.token || !state.user) {
-    setNotice('PayPal returned. Sign in to the same account to verify and credit this purchase.', true);
+    setNotice('PayPal returned. Sign in to the same account to verify and credit this coin purchase.', true);
     return;
   }
   try {

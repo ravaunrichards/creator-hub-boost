@@ -10,6 +10,7 @@ import pg from 'pg';
 import { z } from 'zod';
 import { COIN_PACKAGES, CAMPAIGNS, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl } from './domain.js';
 import { createPayPalWebhookRouter } from './paypal-webhooks.js';
+import { createServiceOrdersRouter } from './service-orders.js';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env.JWT_SECRET.startsWith('replace-'))) {
   throw new Error('Production startup requires a real JWT_SECRET with at least 32 characters.');
@@ -81,6 +82,7 @@ async function paypalAccessToken() {
   return payload.access_token;
 }
 app.use('/api/paypal', createPayPalWebhookRouter({ pool, getAccessToken: paypalAccessToken, paypalBaseUrl }));
+app.use('/api/service-orders', createServiceOrdersRouter({ pool, getAccessToken: paypalAccessToken, paypalBaseUrl, publicBaseUrl }));
 
 function normalizeEmail(value) {
   return String(value ?? '').trim().toLowerCase();

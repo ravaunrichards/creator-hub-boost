@@ -52,6 +52,8 @@ The product does **not** use bots, fabricated accounts, fake comments, or any au
 
    The migration creates/updates wallet, task, coin-purchase, campaign-order, and campaign-response tables. Existing databases need the migration before using the new feedback workflow.
 
+   Then apply `db/migrations/002_paypal_webhooks.sql` and `db/migrations/003_guest_service_orders.sql` in order to enable verified PayPal webhook recording and guest service checkout/tracking.
+
 5. Install, test and start:
 
        npm install
@@ -98,6 +100,16 @@ The server now supports `POST /api/paypal/webhook`. It verifies the PayPal trans
 5. Test with PayPal sandbox credentials and a real sandbox webhook delivery before switching any environment to live.
 
 Only a verified completed capture whose PayPal order ID, amount, and currency match a saved pending purchase can credit coins. The purchase lock, unique capture ID, and unique wallet-ledger idempotency key protect against duplicate delivery and races with the browser capture-return route. Unsupported events, unknown orders, and mismatches are recorded without wallet credit. This code still requires a real webhook ID, HTTPS deployment, and sandbox end-to-end verification before production.
+
+## Guest service checkout and order tracking
+
+Creator Hub Boost also supports service purchases without a member account. The public service chooser loads its packages from `GET /api/service-orders/catalogue`; a visitor selects a creator profile review, video review, growth plan, or content-readiness review, enters a public TikTok URL and checkout email, and pays with PayPal. The server sets every price and verifies the exact PayPal amount and currency before moving the order into `under_review`.
+
+After payment, the browser receives a private tracking link and the same link is emailed when transactional email is configured. The customer can reopen `/orders.html` to view the current status and the actual review notes once the order is completed. Admins work guest orders in the Guest service orders queue at `/admin.html`.
+
+Guest service orders require `db/migrations/003_guest_service_orders.sql` on existing databases. New database installs include the columns in `db/schema.sql`. For email delivery set `RESEND_API_KEY` and `EMAIL_FROM` to a verified Resend sender. Set `PUBLIC_APP_URL` to the deployed HTTPS origin. Without Resend configuration the paid checkout still displays its private tracking link, but email delivery is unavailable.
+
+The service catalogue sells review and planning deliverables. It does not sell or automate followers, likes, views, shares, or fake engagement. Paid orders require an operator to perform the review and publish the actual fulfilment notes before a status can be marked completed.
 
 ## Important limitations before public launch
 

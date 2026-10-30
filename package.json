@@ -2,13 +2,13 @@
   "name": "creator-hub-boost",
   "version": "0.2.0",
   "private": true,
-  "description": "Creator rewards platform with reviewed tasks, a virtual coin wallet, PayPal top-ups, and coin-funded creator campaigns.",
+  "description": "Creator service reviews with guest PayPal checkout, secure order tracking, reviewed tasks, and a virtual coin wallet.",
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "test": "node --test",
-    "check": "node --check server/index.js && node --check server/domain.js && node --check server/paypal-webhooks.js && node --check public/app.js && node --check public/admin.js"
+    "check": "node --check server/index.js && node --check server/domain.js && node --check server/paypal-webhooks.js && node --check server/service-catalogue.js && node --check server/service-orders.js && node --check public/app.js && node --check public/orders.js && node --check public/admin.js"
   },
   "engines": {
     "node": ">=20"

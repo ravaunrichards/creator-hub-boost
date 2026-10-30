@@ -37,3 +37,12 @@
 - TikTok-side views/follows/likes, which are not guaranteed or rewarded as campaign deliverables.
 
 Do not enable live payments or invite public users until integration, security, privacy, platform-policy, and operational checks are complete. Passing unit/syntax checks does not mean the app is production-ready.
+
+
+## Guest service checkout release
+
+- Added server-priced guest service packages and PayPal order creation/capture.
+- Added private order tracking links, tracking-link email requests, and admin fulfilment status/report notes.
+- Added schema migration 003 for guest-order tracking and fulfilment metadata.
+- Added PayPal webhook handling for confirmed guest service orders.
+- Not yet verified here: live PostgreSQL migration execution, PayPal sandbox checkout/webhook delivery, Resend delivery, and a real staff fulfilment cycle. Do not claim the production email provider or database migration is configured until separately verified.
