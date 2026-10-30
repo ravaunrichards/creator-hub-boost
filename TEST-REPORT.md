@@ -32,7 +32,7 @@
 - PostgreSQL schema/migration execution against a running database.
 - End-to-end registration, login, response submission/review, coin credit, campaign spending/refund, and data isolation against live PostgreSQL.
 - PayPal sandbox checkout/capture using configured merchant credentials.
-- PayPal verified webhooks, payment refunds/disputes, email verification, or password recovery.
+- Real PayPal webhook delivery using configured sandbox/live credentials, payment refunds/disputes, email verification, or password recovery.
 - Browser/device end-to-end testing, accessibility, load/performance, or independent penetration testing.
 - TikTok-side views/follows/likes, which are not guaranteed or rewarded as campaign deliverables.
 

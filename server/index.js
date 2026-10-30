@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import pg from 'pg';
 import { z } from 'zod';
 import { COIN_PACKAGES, CAMPAIGNS, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl } from './domain.js';
+import { createPayPalWebhookRouter } from './paypal-webhooks.js';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env.JWT_SECRET.startsWith('replace-'))) {
   throw new Error('Production startup requires a real JWT_SECRET with at least 32 characters.');
@@ -79,6 +80,8 @@ async function paypalAccessToken() {
   if (!payload.access_token) throw new Error('PayPal did not return an access token.');
   return payload.access_token;
 }
+app.use('/api/paypal', createPayPalWebhookRouter({ pool, getAccessToken: paypalAccessToken, paypalBaseUrl }));
+
 function normalizeEmail(value) {
   return String(value ?? '').trim().toLowerCase();
 }

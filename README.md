@@ -87,6 +87,18 @@ Set the resulting hash in ADMIN_PASSWORD_HASH and the matching email in ADMIN_EM
 
 Coin packages and prices are defined in server/domain.js; the browser cannot set a price or coin quantity. A coin purchase is credited only after PayPal reports a completed capture that matches the saved purchase reference, amount and currency.
 
+## PayPal webhook configuration
+
+The server now supports `POST /api/paypal/webhook`. It verifies the PayPal transmission signature through PayPal's verification API before processing any event.
+
+1. Set `PAYPAL_WEBHOOK_ID` to the exact ID from the PayPal Developer Dashboard.
+2. Register `https://YOUR_PUBLIC_APP_HOST/api/paypal/webhook` as the webhook URL on the same PayPal REST app used by the server.
+3. Subscribe to `PAYMENT.CAPTURE.COMPLETED`.
+4. Apply `db/migrations/002_paypal_webhooks.sql` to an existing database. A fresh installation gets the table from `db/schema.sql`.
+5. Test with PayPal sandbox credentials and a real sandbox webhook delivery before switching any environment to live.
+
+Only a verified completed capture whose PayPal order ID, amount, and currency match a saved pending purchase can credit coins. The purchase lock, unique capture ID, and unique wallet-ledger idempotency key protect against duplicate delivery and races with the browser capture-return route. Unsupported events, unknown orders, and mismatches are recorded without wallet credit. This code still requires a real webhook ID, HTTPS deployment, and sandbox end-to-end verification before production.
+
 ## Important limitations before public launch
 
 - **Virtual coins are not cash.** They cannot be withdrawn and are not cash-equivalent in this implementation.
@@ -122,6 +134,7 @@ Production requires a real JWT_SECRET with at least 32 characters. The applicati
 - POST /api/campaign-orders/:id/responses
 - POST /api/coins/create-order
 - POST /api/coins/capture-order
+- POST /api/paypal/webhook (PayPal signature-verified event receiver)
 
 ### Admin (Bearer administrator token)
 - POST /api/admin/login
