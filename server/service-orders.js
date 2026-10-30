@@ -169,7 +169,7 @@ export function createServiceOrdersRouter({ pool, getAccessToken, paypalBaseUrl,
         return res.status(404).json({ error: 'The order reference or private tracking token is not valid.' });
       }
       if (order.status === 'paid' || order.status === 'under_review' || order.status === 'in_progress' || order.status === 'completed') {
-        return res.json({ status: order.status, trackingUrl: `${publicBaseUrl()}/orders.html?ref=${orderRef}&token=${trackingToken}`, emailSent: false, message: 'This order is already confirmed.' });
+        return res.json({ orderRef, status: order.status, trackingUrl: `${publicBaseUrl()}/orders.html?ref=${orderRef}&token=${trackingToken}`, emailSent: false, message: 'This order is already confirmed.' });
       }
       if (order.status !== 'awaiting_payment') return res.status(409).json({ error: 'This order is not awaiting payment.' });
 
@@ -213,7 +213,7 @@ export function createServiceOrdersRouter({ pool, getAccessToken, paypalBaseUrl,
         text: `Your payment is confirmed. Track your order securely here: ${trackingUrl}`,
         html: `<p>Your payment is confirmed.</p><p><a href="${trackingUrl}">Track your Creator Hub Boost order</a></p><p>Keep this private link. It gives access to your order status and completed report.</p>`
       });
-      res.json({ status: 'under_review', trackingUrl, emailSent, message: emailSent ? 'Payment confirmed. Your tracking link has been emailed.' : 'Payment confirmed. Save your private tracking link below; transactional email is not configured yet.' });
+      res.json({ orderRef, status: 'under_review', trackingUrl, emailSent, message: emailSent ? 'Payment confirmed. Your tracking link has been emailed.' : 'Payment confirmed. Save your private tracking link below; transactional email is not configured yet.' });
     } catch (error) {
       console.error('Guest service order payment confirmation failed:', error.message);
       res.status(502).json({ error: 'Payment could not be verified right now. Your order has not been marked as paid unless PayPal confirmation succeeds.' });
@@ -266,7 +266,13 @@ export function createServiceOrdersRouter({ pool, getAccessToken, paypalBaseUrl,
       text: `Use this private link to track your order: ${trackingUrl}`,
       html: `<p>Here is your private order tracking link:</p><p><a href="${trackingUrl}">Track my order</a></p><p>This link expires in 30 days. Do not share it.</p>`
     });
-    if (!sent) return res.status(503).json({ error: 'Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM to send tracking links.' });
+    if (!sent) {
+      return res.json({
+        sent: false,
+        trackingUrl,
+        message: 'Transactional email is not configured yet. Your checkout email matched; open this private tracking link and save it.'
+      });
+    }
     res.json({ sent: true, message: 'A private tracking link has been sent to the checkout email.' });
   });
 

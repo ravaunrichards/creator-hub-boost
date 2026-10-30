@@ -65,6 +65,19 @@ $('#trackingRequestForm').addEventListener('submit', async event => {
       body:JSON.stringify({reference:$('#trackingReference').value.trim(),email:$('#trackingEmail').value.trim()})
     });
     message(data.message || 'Check your email for a private tracking link.');
+    const result = $('#trackingLinkResult');
+    result.replaceChildren();
+    result.hidden = !data.trackingUrl;
+    if (data.trackingUrl) {
+      const label = document.createElement('b');
+      label.textContent = 'Your private tracking link';
+      const link = document.createElement('a');
+      link.href = data.trackingUrl;
+      link.textContent = 'Open your order →';
+      link.className = 'button primary';
+      link.rel = 'noopener';
+      result.append(label, link);
+    }
   } catch (error) {
     message(error.message, true);
   } finally {
