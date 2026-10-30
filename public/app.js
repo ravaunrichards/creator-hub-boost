@@ -1,5 +1,5 @@
 const $ = (selector) => document.querySelector(selector);
-const state = { token: sessionStorage.getItem('chb-access-token') || '', user: null, balance: 0, tasks: [], feedbackTasks: [], coinPackages: [], campaigns: [], activeCampaign: null };
+const state = { token: sessionStorage.getItem('chb-access-token') || '', user: null, balance: 0, tasks: [], feedbackTasks: [], coinPackages: [], campaigns: [], activeCampaign: null, builderCampaignId: 'video-feedback-panel', builderPackageId: 'feedback-5' };
 const money = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
 const number = (value) => new Intl.NumberFormat('en-US').format(Number(value || 0));
 function escapeHtml(value) {
@@ -89,6 +89,7 @@ async function loadCatalogue() {
     state.campaigns = data.campaigns || [];
     renderCoinPackages();
     renderCampaigns();
+    renderBuilder();
   } catch (error) {
     $('#coinGrid').innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
     $('#campaignGrid').innerHTML = `<div class="loading-card">${escapeHtml(error.message)}</div>`;
@@ -196,22 +197,69 @@ function renderCampaigns() {
     <div class="campaign-packages">${campaign.packages.map(pack => `<div class="campaign-package"><div><b>${escapeHtml(pack.label)}</b><small>${escapeHtml(pack.detail)}</small><small>${number(pack.responseCount)} response(s) · ${number(pack.rewardCoinsPerResponse)} coins per approved response</small></div><strong>${number(pack.coins)} 🪙</strong><button class="button outline-button" data-campaign="${escapeHtml(campaign.id)}" data-package="${escapeHtml(pack.id)}">Select</button></div>`).join('')}</div>
   </article>`).join('');
 }
-function openCampaign(campaignId, packageId) {
-  if (!requireSignIn()) return;
-  const campaign = state.campaigns.find(item => item.id === campaignId);
-  const pack = campaign?.packages.find(item => item.id === packageId);
-  if (!campaign || !pack) return;
-  state.activeCampaign = { campaign, pack };
+function renderBuilder() {
+  const grid = $('#builderPackages');
+  if (!grid) return;
+  if (!state.campaigns.length) {
+    grid.innerHTML = '<div class="loading-card">Service packages are unavailable right now.</div>';
+    return;
+  }
+  let campaign = state.campaigns.find(item => item.id === state.builderCampaignId);
+  if (!campaign) campaign = state.campaigns[0];
+  state.builderCampaignId = campaign.id;
+  let pack = campaign.packages.find(item => item.id === state.builderPackageId);
+  if (!pack) pack = campaign.packages[0];
+  state.builderPackageId = pack.id;
+  document.querySelectorAll('[data-builder-campaign]').forEach(button => {
+    const active = button.dataset.builderCampaign === campaign.id;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+    button.disabled = !state.campaigns.some(item => item.id === button.dataset.builderCampaign);
+  });
+  grid.innerHTML = campaign.packages.map(option => `<button type="button" class="builder-package-card ${option.id === pack.id ? 'active' : ''}" data-builder-package="${escapeHtml(option.id)}" aria-pressed="${option.id === pack.id}">
+    <span class="builder-package-radio" aria-hidden="true"></span>
+    <span class="builder-package-copy"><b>${escapeHtml(option.label)}</b><small>${escapeHtml(option.detail)}</small></span>
+    <span class="builder-package-price"><b>${number(option.coins)}</b><small>coins</small></span>
+  </button>`).join('');
+  $('#builderPreviewTitle').textContent = campaign.name;
+  $('#builderPreviewDescription').textContent = campaign.description;
+  $('#builderPreviewCount').textContent = number(pack.responseCount);
+  $('#builderPreviewCost').textContent = number(pack.coins);
+  const target = $('#builderTargetUrl').value.trim();
+  $('#builderPreviewTarget').textContent = target || 'Your profile will appear here.';
+  $('#builderMessage').textContent = '';
+}
+function showActiveCampaignModal() {
+  if (!state.activeCampaign) return;
+  const { campaign, pack, targetUrl = '' } = state.activeCampaign;
   $('#campaignModalTitle').textContent = campaign.name;
   $('#campaignModalSubtitle').textContent = `${pack.label} — ${pack.detail}`;
   $('#campaignCost').textContent = `${number(pack.coins)} coins`;
   $('#campaignMessage').textContent = '';
-  $('#campaignTargetUrl').value = '';
+  $('#campaignTargetUrl').value = targetUrl;
   $('#campaignPolicyAccepted').checked = false;
   $('#campaignModal').hidden = false;
   document.body.style.overflow = 'hidden';
 }
+function openCampaign(campaignId, packageId, targetUrl = '') {
+  const campaign = state.campaigns.find(item => item.id === campaignId);
+  const pack = campaign?.packages.find(item => item.id === packageId);
+  if (!campaign || !pack) return;
+  state.activeCampaign = { campaign, pack, targetUrl };
+  if (!requireSignIn()) return;
+  showActiveCampaignModal();
+}
 function closeCampaign() { $('#campaignModal').hidden = true; document.body.style.overflow = ''; }
+function validateBuilderTarget(value) {
+  let parsed;
+  try { parsed = new URL(String(value || '').trim()); }
+  catch { throw new Error('Enter a valid public TikTok profile or video URL.'); }
+  const host = parsed.hostname.toLowerCase();
+  if (parsed.protocol !== 'https:' || !(host === 'tiktok.com' || host.endsWith('.tiktok.com')) || parsed.username || parsed.password) {
+    throw new Error('Use an HTTPS public profile or video URL hosted on tiktok.com.');
+  }
+  return parsed.href;
+}
 async function buyCoins(packageId, button) {
   if (!requireSignIn()) return;
   button.disabled = true;
@@ -249,11 +297,42 @@ $('#authForm').addEventListener('submit', async (event) => {
     await Promise.all([loadTasks(), loadAvailableFeedbackTasks(), loadTransactions(), loadCampaignOrders()]);
     setNotice(signup ? 'Account created. Welcome!' : 'Signed in successfully.');
     await processPaymentReturn();
+    if (state.activeCampaign?.targetUrl) showActiveCampaignModal();
   } catch (error) {
     $('#authMessage').textContent = error.message;
   } finally {
     button.disabled = false;
     button.textContent = signup ? 'Create account →' : 'Sign in →';
+  }
+});
+$('#builderTabs').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-builder-campaign]');
+  if (!button || !state.campaigns.some(item => item.id === button.dataset.builderCampaign)) return;
+  state.builderCampaignId = button.dataset.builderCampaign;
+  state.builderPackageId = state.campaigns.find(item => item.id === state.builderCampaignId)?.packages[0]?.id || '';
+  renderBuilder();
+});
+$('#builderPackages').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-builder-package]');
+  if (!button) return;
+  state.builderPackageId = button.dataset.builderPackage;
+  renderBuilder();
+});
+$('#builderTargetUrl').addEventListener('input', () => {
+  const url = $('#builderTargetUrl').value.trim();
+  $('#builderPreviewTarget').textContent = url || 'Your profile will appear here.';
+});
+$('#builderForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  try {
+    const targetUrl = validateBuilderTarget($('#builderTargetUrl').value);
+    const campaign = state.campaigns.find(item => item.id === state.builderCampaignId);
+    const pack = campaign?.packages.find(item => item.id === state.builderPackageId);
+    if (!campaign || !pack) throw new Error('Select an available service package.');
+    $('#builderMessage').textContent = '';
+    openCampaign(campaign.id, pack.id, targetUrl);
+  } catch (error) {
+    $('#builderMessage').textContent = error.message;
   }
 });
 $('#toggleAuthMode').addEventListener('click', () => setAuthMode($('#authForm').dataset.mode === 'register' ? 'login' : 'register'));
@@ -339,6 +418,7 @@ $('#campaignForm').addEventListener('submit', async (event) => {
       })
     });
     state.balance = Number(data.wallet.balance);
+    state.activeCampaign = null;
     $('#walletBalance').textContent = number(state.balance);
     $('#campaignMessage').textContent = data.message;
     setNotice(`Campaign submitted · ${number(state.balance)} coins left`);
