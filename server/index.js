@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { COIN_PACKAGES, CAMPAIGNS, validateTaskSubmission, validateCampaignOrder, validateTikTokUrl, paypalBaseUrl } from './domain.js';
 import { createPayPalWebhookRouter } from './paypal-webhooks.js';
 import { createServiceOrdersRouter } from './service-orders.js';
+import { runMigrations } from './migrate.js';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env.JWT_SECRET.startsWith('replace-'))) {
   throw new Error('Production startup requires a real JWT_SECRET with at least 32 characters.');
@@ -19,7 +20,12 @@ if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process
 const app = express();
 const { Pool } = pg;
 const pool = process.env.DATABASE_URL
-  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false })
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.PGSSL === 'false' ? false : process.env.PGSSL === 'true' || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 30_000
+    })
   : null;
 
 app.disable('x-powered-by');
@@ -93,13 +99,36 @@ function asCoins(value) {
   return Number.isSafeInteger(coins) && coins >= 0 ? coins : 0;
 }
 
-app.get('/api/health', async (_req, res) => {
-  let database = 'not_configured';
-  if (pool) {
-    try { await pool.query('SELECT 1'); database = 'connected'; }
-    catch { database = 'unavailable'; }
+// Liveness only: the web process can be alive while the database is being provisioned.
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, service: 'Creator Hub Boost' });
+});
+
+// Readiness verifies the dedicated database and every table used by member/admin workflows.
+app.get('/api/ready', async (_req, res) => {
+  if (!pool) {
+    return res.status(503).json({ ready: false, database: 'not_configured', error: 'Creator Hub Boost requires its own DATABASE_URL.' });
   }
-  res.status(database === 'unavailable' ? 503 : 200).json({ ok: database !== 'unavailable', service: 'Creator Hub Boost', database });
+  try {
+    const requiredTables = [
+      'users', 'wallets', 'wallet_transactions', 'tasks', 'task_submissions',
+      'coin_purchases', 'campaign_orders', 'campaign_responses', 'orders',
+      'paypal_webhook_events', 'creator_hub_boost_schema_migrations'
+    ];
+    const result = await pool.query(
+      `SELECT name, to_regclass('public.' || name) IS NOT NULL AS present
+       FROM unnest($1::text[]) AS required(name)`,
+      [requiredTables]
+    );
+    const missing = result.rows.filter(row => !row.present).map(row => row.name);
+    if (missing.length) {
+      return res.status(503).json({ ready: false, database: 'connected', migrations: 'incomplete', missingTables: missing });
+    }
+    return res.json({ ready: true, database: 'connected', migrations: 'complete' });
+  } catch (error) {
+    console.error('Readiness check failed:', error.message);
+    return res.status(503).json({ ready: false, database: 'unavailable' });
+  }
 });
 
 app.get('/api/catalogue', (_req, res) => {
@@ -749,4 +778,28 @@ app.use((error, _req, res, _next) => {
 });
 
 const port = Number(process.env.PORT || 3000);
-app.listen(port, () => console.log(`Creator Hub Boost listening on port ${port}`));
+
+async function start() {
+  if (pool) {
+    await runMigrations(pool);
+  } else {
+    console.warn('DATABASE_URL is not configured. The site is serving, but account, wallet, campaign and order APIs are unavailable.');
+  }
+  const server = app.listen(port, () => console.log(`Creator Hub Boost listening on port ${port}`));
+
+  const shutdown = signal => {
+    console.log(`Received ${signal}; closing Creator Hub Boost cleanly.`);
+    server.close(async () => {
+      if (pool) await pool.end().catch(() => {});
+      process.exit(0);
+    });
+  };
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
+}
+
+start().catch(async error => {
+  console.error('Creator Hub Boost startup failed:', error.message);
+  if (pool) await pool.end().catch(() => {});
+  process.exitCode = 1;
+});
