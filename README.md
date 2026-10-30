@@ -42,24 +42,20 @@ The product does **not** use bots, fabricated accounts, fake comments, or any au
        cp .env.example .env
 
 2. Edit .env. Set a unique JWT_SECRET, DATABASE_URL, and PUBLIC_APP_URL. Keep PAYPAL_ENV=sandbox while testing.
-3. For a fresh database, apply the full schema:
-
-       psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
-
-4. For an existing installation, apply the incremental migration:
-
-       psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_rewards_wallet.sql
-
-   The migration creates/updates wallet, task, coin-purchase, campaign-order, and campaign-response tables. Existing databases need the migration before using the new feedback workflow.
-
-   Then apply `db/migrations/002_paypal_webhooks.sql` and `db/migrations/003_guest_service_orders.sql` in order to enable verified PayPal webhook recording and guest service checkout/tracking.
-
-5. Install, test and start:
+3. Install dependencies and apply the schema/migrations:
 
        npm install
+       npm run db:migrate
+
+   The migration runner applies `db/schema.sql` once, then every numbered `db/migrations/*.sql` file in numeric order. It records each file's SHA-256 checksum in `creator_hub_boost_schema_migrations`, uses a PostgreSQL advisory lock to prevent overlapping deploys, and runs each file in a transaction. If an already-applied file changes, startup stops and asks for a new forward migration instead of silently rewriting history.
+
+4. Run checks and start the application:
+
        npm run check
        npm test
        npm start
+
+   When `DATABASE_URL` is set on the deployed service, the same migration runner runs automatically before the web server starts. Without that project's own database URL, the public site can serve its static shell, but member, wallet, campaign and order APIs remain unavailable. `GET /api/ready` returns HTTP 503 until the dedicated database is connected and all required tables exist.
 
 6. Open http://localhost:3000.
 
@@ -126,7 +122,8 @@ Production requires a real JWT_SECRET with at least 32 characters. The applicati
 ## API outline
 
 ### Public
-- GET /api/health
+- GET /api/health (web-process liveness)
+- GET /api/ready (database and migration readiness)
 - GET /api/catalogue
 - GET /api/coin-packages
 - GET /api/campaigns
