@@ -281,12 +281,15 @@ function showServicePaymentNotice(data) {
   heading.textContent = 'Payment confirmed — your order is in the review queue.';
   const detail = document.createElement('p');
   detail.textContent = data.message || 'Save this private tracking link to follow your order.';
+  const reference = document.createElement('p');
+  reference.className = 'service-order-reference';
+  reference.textContent = data.orderRef ? `Order reference: ${data.orderRef}` : '';
   const link = document.createElement('a');
   link.href = data.trackingUrl;
   link.textContent = 'Open private order tracking →';
   link.className = 'button primary';
   link.rel = 'noopener';
-  notice.append(heading, detail, link);
+  notice.append(heading, detail, reference, link);
   notice.hidden = false;
   notice.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
