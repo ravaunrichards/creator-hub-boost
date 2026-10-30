@@ -33,6 +33,26 @@ export const CAMPAIGNS = [
       { id: 'creative-1', label: '1 structured review', detail: 'One independent feedback submission', coins: 200, responseCount: 1, rewardCoinsPerResponse: 100 },
       { id: 'creative-3', label: '3 structured reviews', detail: 'Three independent feedback submissions', coins: 450, responseCount: 3, rewardCoinsPerResponse: 100 }
     ]
+  },
+  {
+    id: 'profile-review',
+    name: 'Creator profile review',
+    category: 'Profile review',
+    description: 'Receive independent feedback on profile clarity, bio, positioning, and how easily new visitors can understand your content.',
+    packages: [
+      { id: 'profile-3', label: '3 profile reviews', detail: 'Three independent reviews of your public creator profile', coins: 250, responseCount: 3, rewardCoinsPerResponse: 30 },
+      { id: 'profile-10', label: '10 profile reviews', detail: 'Ten independent reviews of your profile presentation', coins: 700, responseCount: 10, rewardCoinsPerResponse: 30 }
+    ]
+  },
+  {
+    id: 'accessibility-review',
+    name: 'Video accessibility review',
+    category: 'Accessibility',
+    description: 'Get human feedback on captions, on-screen text, contrast, pacing, and accessibility improvements for your content.',
+    packages: [
+      { id: 'accessibility-3', label: '3 accessibility reviews', detail: 'Three independent accessibility checklists', coins: 300, responseCount: 3, rewardCoinsPerResponse: 35 },
+      { id: 'accessibility-10', label: '10 accessibility reviews', detail: 'Ten independent accessibility checklists', coins: 850, responseCount: 10, rewardCoinsPerResponse: 35 }
+    ]
   }
 ];
 

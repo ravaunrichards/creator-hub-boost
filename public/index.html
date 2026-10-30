@@ -11,7 +11,7 @@
 <body>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Creator Hub Boost home"><span class="brand-mark">CH</span><span>creator hub <b>boost</b></span></a>
-    <nav><a href="#account">Account</a><a href="#tasks">Earn coins</a><a href="#wallet">Buy coins</a><a href="#campaigns">Campaigns</a><a href="#orders">My orders</a></nav>
+    <nav><a href="#quickBuilder">Services</a><a href="#wallet">Buy coins</a><a href="#orders">Track orders</a><a href="#account">Account</a></nav>
     <a class="top-cta" href="#account" id="authNav">Sign in <span>↗</span></a>
     <button class="menu-btn" aria-label="Open menu" id="menuBtn">☰</button>
   </header>
@@ -32,6 +32,51 @@
         <div class="float-card card-top"><span class="mini-dot purple"></span><span>Rewards wallet</span><b>🪙</b></div>
         <div class="float-card card-bottom"><span class="metric-icon">✦</span><div><small>One platform</small><b>Tasks · Coins · Campaigns</b></div><span class="arrow-circle">↗</span></div>
         <div class="tiny-tag tag-left">EARN REWARDS</div><div class="tiny-tag tag-right">CREATOR FIRST</div>
+      </div>
+    </section>
+
+    <section class="builder-section" id="quickBuilder">
+      <div class="builder-shell">
+        <div class="builder-intro">
+          <div class="eyebrow dark-eyebrow"><span class="pulse builder-pulse"></span> CREATOR SERVICES</div>
+          <h2>Your content.<br><span>Your next move.</span></h2>
+          <p>Choose a real-human feedback service, preview the package, and submit a campaign for review. You never need to share your TikTok password.</p>
+          <div class="builder-promise"><span>✓</span><div><b>Clear package before checkout</b><small>Service details and coin cost are shown before you submit.</small></div></div>
+        </div>
+        <div class="builder-card">
+          <div class="builder-steps" aria-label="Campaign steps">
+            <div class="builder-step active"><span>01</span><b>Choose & preview</b></div>
+            <div class="builder-step"><span>02</span><b>Account</b></div>
+            <div class="builder-step"><span>03</span><b>Submit campaign</b></div>
+          </div>
+          <form id="builderForm">
+            <fieldset class="builder-service-field">
+              <legend>01 · Choose a service</legend>
+              <div class="builder-tabs" id="builderTabs" role="group" aria-label="Creator service">
+                <button type="button" class="builder-tab active" data-builder-campaign="video-feedback-panel"><span>▶</span><b>Video feedback</b></button>
+                <button type="button" class="builder-tab" data-builder-campaign="profile-review"><span>◎</span><b>Profile review</b></button>
+                <button type="button" class="builder-tab" data-builder-campaign="caption-review"><span>✎</span><b>Caption review</b></button>
+                <button type="button" class="builder-tab" data-builder-campaign="accessibility-review"><span>◉</span><b>Accessibility</b></button>
+              </div>
+            </fieldset>
+            <label class="builder-url-label" for="builderTargetUrl">02 · Your public TikTok profile or video
+              <input id="builderTargetUrl" type="url" placeholder="https://www.tiktok.com/@yourname" maxlength="500" autocomplete="url" required>
+            </label>
+            <div class="builder-package-heading"><span>03 · Choose a response package</span><span>Paid with coins</span></div>
+            <div id="builderPackages" class="builder-packages"><div class="loading-card">Loading service packages…</div></div>
+            <div class="builder-submit-row"><button class="button primary" id="builderReviewButton" type="submit">Review my campaign <span>→</span></button><small>No order is placed by previewing.</small></div>
+            <p id="builderMessage" class="form-message" aria-live="polite"></p>
+          </form>
+        </div>
+        <aside class="builder-preview" id="builderPreview" aria-live="polite">
+          <div class="preview-topline"><span class="preview-live-dot"></span> CAMPAIGN PREVIEW <span class="preview-label">PREVIEW</span></div>
+          <div class="preview-profile-mark">✦</div><p class="preview-overline">YOUR SELECTED SERVICE</p>
+          <h3 id="builderPreviewTitle">Genuine video feedback</h3>
+          <p id="builderPreviewDescription">Receive independent opinions from real participants about your public content.</p>
+          <div class="preview-metrics"><div><small>Feedback responses</small><strong id="builderPreviewCount">5</strong></div><div><small>Package cost</small><strong><span id="builderPreviewCost">250</span> <em>coins</em></strong></div></div>
+          <div class="preview-link-row"><span>↗</span><div><b id="builderPreviewTarget">Your profile will appear here.</b><small>Preview only · does not alter TikTok</small></div></div>
+          <p class="preview-disclaimer">Package quantities describe requested human feedback responses, not guaranteed followers, likes, views, shares, or other TikTok metrics.</p>
+        </aside>
       </div>
     </section>
 
