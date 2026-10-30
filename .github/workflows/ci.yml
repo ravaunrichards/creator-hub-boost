@@ -20,6 +20,23 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Report dependency advisories
+        run: |
+          npm audit --json > npm-audit.json || true
+          node --input-type=commonjs -e '
+            const report = require("./npm-audit.json");
+            const total = report.metadata?.vulnerabilities?.total ?? 0;
+            console.log(`Dependency audit: ${total} total vulnerabilities`);
+            for (const [name, item] of Object.entries(report.vulnerabilities || {})) {
+              console.log(`${name}: severity=${item.severity}; direct=${item.isDirect}; range=${item.range}; fix=${JSON.stringify(item.fixAvailable)}`);
+            }
+          '
+      - name: Upload dependency audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: npm-audit.json
+          if-no-files-found: error
       - name: Run domain tests
         run: npm test
       - name: Check JavaScript syntax
