@@ -6,9 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
+    "db:migrate": "node server/migrate.js",
     "dev": "node --watch server/index.js",
     "test": "node --test",
-    "check": "node --check server/index.js && node --check server/domain.js && node --check server/paypal-webhooks.js && node --check server/service-catalogue.js && node --check server/service-orders.js && node --check public/app.js && node --check public/orders.js && node --check public/admin.js"
+    "check": "node --check server/index.js && node --check server/domain.js && node --check server/paypal-webhooks.js && node --check server/service-catalogue.js && node --check server/service-orders.js && node --check server/migrate.js && node --check public/app.js && node --check public/orders.js && node --check public/admin.js"
   },
   "engines": {
     "node": ">=20"
