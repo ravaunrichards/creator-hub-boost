@@ -23,6 +23,7 @@ const pool = process.env.DATABASE_URL
   : null;
 
 app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.PUBLIC_APP_URL || 'http://localhost:3000' }));
 app.use(express.json({ limit: '20kb' }));
